@@ -99,7 +99,7 @@ class ParticleAutoencoder(tf.keras.Model):
         return encoder, decoder, model
 
     def compile(self, optimizer, reco_loss):
-        super(Autoencoder, self).compile()
+        super(ParticleAutoencoder, self).compile()
         self.optimizer = optimizer
         self.reco_loss = reco_loss
 
@@ -128,7 +128,7 @@ class ParticleAutoencoder(tf.keras.Model):
         # Compute predictions
         x_pred = self(x, training=False)
         # Updates the metrics tracking the loss
-        loss = self.reco_loss(x, x_pred)
+        loss = tf.math.reduce_mean(self.reco_loss(x, x_pred))
         # Return a dict mapping metric names to current value.
         return {'loss' : loss}
 

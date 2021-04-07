@@ -3,13 +3,14 @@ import tensorflow as tf
 from matplotlib import pyplot as plt
 import numpy as np
 
-import data_util.data_factory as dafa
+import data.data_sample as dasa
 import models.autoencoder as auen
 import anpofah.sample_analysis.sample_converter as saco
 import pofah.util.utility_fun as utfu
-
+import vande.vae.losses as loss
 
 def compare_jet_images(test_ds, model):
+    print('>>> plotting jet image comparison original vs predicted')
     batch = next(test_ds.as_numpy_iterator())
     for i in np.random.choice(len(batch), 3):
         particles = batch[i]
@@ -25,12 +26,11 @@ def compare_jet_images(test_ds, model):
 
 def train(input_shape=(100,3), latent_dim=6, epochs=10):
 
-
     # get data
-    data_sample = dafa.DataSample('qcdSide')
+    data_sample = dasa.DataSample('qcdSide')
     train_ds, valid_ds, test_ds = data_sample.get_datasets_for_training(read_n=int(1e4))
     model = auen.ParticleAutoencoder(input_shape=input_shape, latent_dim=latent_dim, x_mean_stdev=data_sample.get_mean_and_stdev())
-    model.compile(optimizer=tf.keras.optimizers.Adam(), reco_loss=tf.keras.losses.MeanSquaredError())
+    model.compile(optimizer=tf.keras.optimizers.Adam(), reco_loss=loss.threeD_loss)
     # print(model.summary())
 
     print('>>> training autoencoder')
