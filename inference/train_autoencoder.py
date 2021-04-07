@@ -24,10 +24,10 @@ def compare_jet_images(test_ds, model):
         plt.savefig('fig/img_pred_'+str(i)+'.png')
 
 
-def train(input_shape=(100,3), latent_dim=6, epochs=10):
+def train(sample_id='qcdSide', input_shape=(100,3), latent_dim=6, epochs=10):
 
     # get data
-    data_sample = dasa.DataSample('qcdSide')
+    data_sample = dasa.DataSample(sample_id)
     train_ds, valid_ds, test_ds = data_sample.get_datasets_for_training(read_n=int(1e4))
     model = auen.ParticleAutoencoder(input_shape=input_shape, latent_dim=latent_dim, x_mean_stdev=data_sample.get_mean_and_stdev())
     model.compile(optimizer=tf.keras.optimizers.Adam(), reco_loss=loss.threeD_loss)
