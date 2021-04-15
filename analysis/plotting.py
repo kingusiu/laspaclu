@@ -21,6 +21,13 @@ def make_pairwise_heatmaps(data, num_dim):
     return np.asarray(heatmaps), np.asarray(xedges), np.asarray(yedges)
 
 
+def calculate_nrows_ncols(latent_dim_n):
+    # calculate number of subplots on canvas
+    nrows = int(round(math.sqrt(latent_dim_n/2)))
+    ncols = math.ceil(math.sqrt(latent_dim_n/2))
+    return nrows, ncols
+
+
 def plot_latent_space_2D(latent_coords, title_suffix="data", filename_suffix="data", fig_dir='fig'): # ndarray [M x K] 
     '''
         plot latent space coordinates by slices of 2D
@@ -37,8 +44,7 @@ def plot_latent_space_2D(latent_coords, title_suffix="data", filename_suffix="da
     extent = [np.min(xedges), np.max(xedges), np.min(yedges), np.max(yedges)]
 
     # calculate number of subplots on canvas
-    nrows = int(round(math.sqrt(latent_dim_n/2)))
-    ncols = math.ceil(math.sqrt(latent_dim_n/2))
+    nrows, ncols = calculate_nrows_ncols(latent_dim_n)
 
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(9, 9))
 
@@ -60,7 +66,7 @@ def plot_latent_space_2D(latent_coords, title_suffix="data", filename_suffix="da
     plt.close(fig)
 
 
-def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix="data", filename_suffix="data", fig_dir='fig'):
+def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig'):
     '''
         plot latent space coordinates by slices of 2D
         latent_coords ... ndarray of sim [M x K] containing M samples with each K latent coordinates
@@ -78,35 +84,46 @@ def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix="data", f
               min(np.min(yedges_bg), np.min(yedges_sig)), max(np.max(yedges_bg), np.max(yedges_sig))]
 
     # calculate number of subplots on canvas
-    nrows = int(round(math.sqrt(latent_dim_n/2)))
-    ncols = math.ceil(math.sqrt(latent_dim_n/2))
+    nrows, ncols = calculate_nrows_ncols(latent_dim_n)
 
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(9, 9))
     # make dark controur lines
-    levels_n = 6
-    colors_bg = [mpl.colors.rgb2hex(cm.get_cmap('Blues')(int(i))) for i in np.linspace(60, 350, levels_n)]
-    colors_sig = [mpl.colors.rgb2hex(cm.get_cmap('Oranges')(int(i))) for i in np.linspace(60, 350, levels_n)]
+    levels_n = 7
+    colors_bg = [mpl.colors.rgb2hex(cm.get_cmap('Blues')(int(i))) for i in np.linspace(60, 320, levels_n)]
+    colors_sig = [mpl.colors.rgb2hex(cm.get_cmap('Oranges')(int(i))) for i in np.linspace(60, 320, levels_n)]
 
     for d, (heat_bg, heat_sig, ax) in enumerate(zip(heatmaps_bg, heatmaps_sig, axs.flat[:latent_dim_n])):
         cont_bg = ax.contour(heat_bg.T, extent=extent, colors=colors_bg, levels=levels_n)
         cont_sig = ax.contour(heat_sig.T, extent=extent, colors=colors_sig, levels=levels_n)
-        ax.set_title('dims {} & {}'.format(d*2, d*2+1), fontsize='small')
+        ax.set_title('dims {} & {}'.format(d+1, d+2), fontsize='small')
         # fig.colorbar(im, ax=ax)
 
     for a in axs.flat: a.set_xticks(a.get_xticks()[::2])
     if axs.size > latent_dim_n/2:
         for a in axs.flat[int(latent_dim_n/2):]: a.axis('off')
 
-    plt.legend([cont_bg.collections[0], cont_sig.collections[0]], ['Background', 'Signal'], loc='center')
-    plt.suptitle('latent space ' + title_suffix)
+    plt.legend([cont_bg.collections[-1], cont_sig.collections[-1]], ['Background', 'Signal'], loc='center')
+    plt.suptitle(' '.join(filter(None, ['latent space ', title_suffix])))
     plt.tight_layout()
-    fig.savefig(os.path.join(fig_dir, 'latent_space_2D_contour_' + filename_suffix + '.png'))
+    fig.savefig(os.path.join(fig_dir, '_'.join(filter(None, ['latent_space_2D_contour', filename_suffix, '.png']))))
     plt.close(fig)
 
 
-def plot_kmeans(data, cluster_assignemnts, cluster_centers):
+def plot_kmeans_clusters(data, cluster_assignemnts, cluster_centers, title_suffix=None, filename_suffix=None, fig_dir='fig'):
 
     latent_dim_n = data.shape[1] - 1 if data.shape[1] % 2 else data.shape[1] # if num latent dims is odd, slice off last dim
+    nrows, ncols = calculate_nrows_ncols(latent_dim_n)
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=(9, 9))
 
-    for i in range(0, latent_dim_n, 2):
-        plt.scatter(data[:,i], data[:,i+1], c=cluster_assignemnts, cmap='')
+    for d, ax in zip(range(0, latent_dim_n, 2), axs.flat):
+        ax.scatter(data[:,d], data[:,d+1], c=cluster_assignemnts, s=2, cmap='tab10')
+        ax.set_title('dims {} & {}'.format(d+1, d+2), fontsize='small')
+        ax.scatter(cluster_centers[:, d], cluster_centers[:, d+1], c='black', s=100, alpha=0.5);
+
+    if axs.size > latent_dim_n/2:
+        for a in axs.flat[int(latent_dim_n/2):]: a.axis('off')
+
+    plt.suptitle(' '.join(filter(None, ['clustering', title_suffix])))
+    plt.tight_layout()
+    fig.savefig(os.path.join(fig_dir, '_'.join(filter(None, ['kmeans_clusters', filename_suffix, '.png']))))
+    plt.close(fig)
