@@ -116,7 +116,7 @@ def plot_kmeans_clusters(data, cluster_assignemnts, cluster_centers, title_suffi
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=(9, 9))
 
     for d, ax in zip(range(0, latent_dim_n, 2), axs.flat):
-        ax.scatter(data[:,d], data[:,d+1], c=cluster_assignemnts, s=2, cmap='tab10')
+        ax.scatter(data[:,d], data[:,d+1], c=cluster_assignemnts, s=1.5, cmap='tab10')
         ax.set_title('dims {} & {}'.format(d+1, d+2), fontsize='small')
         ax.scatter(cluster_centers[:, d], cluster_centers[:, d+1], c='black', s=100, alpha=0.5);
 
