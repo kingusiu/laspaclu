@@ -49,8 +49,7 @@ def plot_latent_space_2D(latent_coords, title_suffix="data", filename_suffix="da
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(9, 9))
 
     for d, ax in zip(range(len(heatmaps)), axs.flat[:latent_dim_n]):
-        im = ax.imshow(heatmaps[d].T, extent=extent, origin='lower',
-                       norm=colors.LogNorm(vmin=min_hist_val, vmax=max_hist_val))
+        im = ax.imshow(heatmaps[d].T, extent=extent, origin='lower', norm=colors.LogNorm(vmin=min_hist_val, vmax=max_hist_val))
         ax.set_title('dims {} & {}'.format(d*2, d*2+1), fontsize='small')
         # fig.colorbar(im, ax=ax)
 
@@ -109,16 +108,47 @@ def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, fil
     plt.close(fig)
 
 
-def plot_kmeans_clusters(data, cluster_assignemnts, cluster_centers, title_suffix=None, filename_suffix=None, fig_dir='fig'):
+def plot_clusters(latent_coords, cluster_assignemnts, cluster_centers=None, title_suffix=None, filename_suffix=None, fig_dir='fig'):
 
-    latent_dim_n = data.shape[1] - 1 if data.shape[1] % 2 else data.shape[1] # if num latent dims is odd, slice off last dim
+    latent_dim_n = latent_coords.shape[1] - 1 if latent_coords.shape[1] % 2 else latent_coords.shape[1] # if num latent dims is odd, slice off last dim
     nrows, ncols = calculate_nrows_ncols(latent_dim_n)
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=(9, 9))
 
     for d, ax in zip(range(0, latent_dim_n, 2), axs.flat):
-        ax.scatter(data[:,d], data[:,d+1], c=cluster_assignemnts, s=1.5, cmap='tab10')
+        ax.scatter(latent_coords[:,d], latent_coords[:,d+1], c=cluster_assignemnts, s=1.5, cmap='tab10')
         ax.set_title('dims {} & {}'.format(d+1, d+2), fontsize='small')
-        ax.scatter(cluster_centers[:, d], cluster_centers[:, d+1], c='black', s=100, alpha=0.5);
+        if cluster_centers is not None:
+            ax.scatter(cluster_centers[:, d], cluster_centers[:, d+1], c='black', s=100, alpha=0.5);
+
+    if axs.size > latent_dim_n/2:
+        for a in axs.flat[int(latent_dim_n/2):]: a.axis('off')
+
+    plt.suptitle(' '.join(filter(None, ['clustering', title_suffix])))
+    plt.tight_layout()
+    fig.savefig(os.path.join(fig_dir, '_'.join(filter(None, ['clustering', filename_suffix, '.png']))))
+    plt.close(fig)
+
+
+# not easy to plot 6D decision boundary in 2D => currently not working!
+def plot_svm_decision_boundary(model, latent_coords, cluster_assignemnts, title_suffix=None, filename_suffix=None, fig_dir='.fig'):
+
+    # make regular meshgrid for latent space
+    grid_vals = np.linspace(np.min(latent_coords, axis=0), np.max(latent_coords, axis=0), 100)
+    mesh_vals = np.meshgrid(*list(grid_vals.T))
+
+    # compute decision boundary in entire latent space
+    zz = model.decision_function(np.c_([m.ravel() for m in mesh_vals]))
+    zz = zz.reshape(mesh_vals[0].shape) # reshape into latent space dimensionality
+
+    latent_dim_n = latent_coords.shape[1] - 1 if latent_coords.shape[1] % 2 else latent_coords.shape[1] # if num latent dims is odd, slice off last dim
+    nrows, ncols = calculate_nrows_ncols(latent_dim_n)
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, sharex=True, sharey=True, figsize=(9, 9))
+
+    for d, ax in zip(range(0, latent_dim_n, 2), axs.flat):
+        ax.scatter(latent_coords[:,d], latent_coords[:,d+1], c=cluster_assignemnts, s=1.5, cmap='tab10')
+        ax.set_title('dims {} & {}'.format(d+1, d+2), fontsize='small')
+        # plot decision boundary
+        ax.contour(mesh_vals[d], mesh_vals[d+1], zz, levels=[0], c='black', s=100, alpha=0.5);
 
     if axs.size > latent_dim_n/2:
         for a in axs.flat[int(latent_dim_n/2):]: a.axis('off')
@@ -127,3 +157,4 @@ def plot_kmeans_clusters(data, cluster_assignemnts, cluster_centers, title_suffi
     plt.tight_layout()
     fig.savefig(os.path.join(fig_dir, '_'.join(filter(None, ['kmeans_clusters', filename_suffix, '.png']))))
     plt.close(fig)
+
