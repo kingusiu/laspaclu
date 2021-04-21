@@ -5,6 +5,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import colors
 import matplotlib.cm as cm
+import anpofah.util.plotting_util as plut
 
 
 def make_pairwise_heatmaps(data, num_dim):
@@ -13,7 +14,7 @@ def make_pairwise_heatmaps(data, num_dim):
     yedges = []
 
     for i in range(0, num_dim, 2):
-        heatmap, xedge, yedge = np.histogram2d(data[:, i], data[:, i+1], bins=70)
+        heatmap, xedge, yedge = np.histogram2d(data[:, i], data[:, i+1], bins=70, normed=True)
         heatmaps.append(heatmap)
         xedges.append(xedge)
         yedges.append(yedge)
@@ -65,6 +66,15 @@ def plot_latent_space_2D(latent_coords, title_suffix="data", filename_suffix="da
     plt.close(fig)
 
 
+def plot_latent_space_1D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig'):
+    
+    subtitles = ['dim ' + str(d+1) for d in range(latent_bg.shape[1])]
+    suptitle = ' '.join(['latent space distributions', title_suffix])
+    plot_name = '_'.join(['latent_space_1D_hist', filename_suffix])
+
+    plut.plot_bg_vs_sig_multihist(list(latent_bg.T), list(latent_sig.T), subtitles=subtitles, suptitle=suptitle, plot_name=plot_name)
+
+
 def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig'):
     '''
         plot latent space coordinates by slices of 2D
@@ -85,23 +95,27 @@ def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, fil
     # calculate number of subplots on canvas
     nrows, ncols = calculate_nrows_ncols(latent_dim_n)
 
-    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(9, 9))
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=(9, 9), sharex=False, sharey=False)
     # make dark controur lines
     levels_n = 7
     colors_bg = [mpl.colors.rgb2hex(cm.get_cmap('Blues')(int(i))) for i in np.linspace(60, 320, levels_n)]
     colors_sig = [mpl.colors.rgb2hex(cm.get_cmap('Oranges')(int(i))) for i in np.linspace(60, 320, levels_n)]
 
     for d, (heat_bg, heat_sig, ax) in enumerate(zip(heatmaps_bg, heatmaps_sig, axs.flat[:latent_dim_n])):
-        cont_bg = ax.contour(heat_bg.T, extent=extent, colors=colors_bg, levels=levels_n)
-        cont_sig = ax.contour(heat_sig.T, extent=extent, colors=colors_sig, levels=levels_n)
-        ax.set_title('dims {} & {}'.format(d+1, d+2), fontsize='small')
-        # fig.colorbar(im, ax=ax)
-
+        cont_bg = ax.contour(heat_bg.T, cmap=cm.get_cmap('Blues')) #, norm=colors.LogNorm(), colors=colors_bg, extent=extent, levels=levels_n)
+        cont_sig = ax.contour(heat_sig.T, cmap=cm.get_cmap('Oranges')) #, norm=colors.LogNorm(), colors=colors_sig, extent=extent, levels=levels_n)
+        ax.set_title('dims {} & {}'.format(d*2+1, d*2+2), fontsize='small')
+        ax.clabel(cont_bg, colors='k', fontsize=5.)
+        ax.clabel(cont_sig, colors='k', fontsize=5.)
+        
+    fig.colorbar(cont_bg, ax=axs.flat[-1])
+    fig.colorbar(cont_sig, ax=axs.flat[-1])
+        
     for a in axs.flat: a.set_xticks(a.get_xticks()[::2])
     if axs.size > latent_dim_n/2:
         for a in axs.flat[int(latent_dim_n/2):]: a.axis('off')
 
-    plt.legend([cont_bg.collections[-1], cont_sig.collections[-1]], ['Background', 'Signal'], loc='center')
+    plt.legend([cont_bg.collections[0], cont_sig.collections[0]], ['Background', 'Signal'], loc='center')
     plt.suptitle(' '.join(filter(None, ['latent space ', title_suffix])))
     plt.tight_layout()
     fig.savefig(os.path.join(fig_dir, '_'.join(filter(None, ['latent_space_2D_contour', filename_suffix, '.png']))))

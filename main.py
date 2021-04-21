@@ -31,10 +31,14 @@ dist_to_cluster_center = lambda a,b: np.sqrt(np.sum((a-b)**2,axis=1))
 
 
 def compute_metric_score(algo_str, coords, model):
+    # compute euclidian distance to closest cluster center for kmeans
     if algo_str == 'kmeans':
         return np.sqrt(np.sum(model.transform(coords)**2, axis=1))
+    # compute squared distance to separating hyperplane (shifting to all < 0) => Losing info of inlier vs outlier in this way (???)
     elif algo_str == 'one_class_svm':
-        return model.decision_function(coords)
+        distances = model.decision_function(coords)
+        distances = distances - np.max(distances)
+        return distances**2
 
 
 #****************************************#
@@ -72,27 +76,27 @@ latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, sample_id=
 #****************************************#
 #               KMEANS
 
-if params.cluster_alg == 'kmeans':
+# if params.cluster_alg == 'kmeans':
 
-    print('>>> training kmeans')
-    cluster_model = cluster.train_kmeans(latent_coords_qcd)
-    cluster_centers = cluster_model.cluster_centers_
+#     print('>>> training kmeans')
+#     cluster_model = cluster.train_kmeans(latent_coords_qcd)
+#     cluster_centers = cluster_model.cluster_centers_
 
-#****************************************#
-#           ONE CLASS SVM
+# #****************************************#
+# #           ONE CLASS SVM
 
-else:
+# else:
 
-    print('>>> training one class svm')
-    cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
-    cluster_centers = None # no cluster centers for one class svm
+#     print('>>> training one class svm')
+#     cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
+#     cluster_centers = None # no cluster centers for one class svm
 
 
-# apply to qcd training set -> obtain cluster assignment
-cluster_assignemnts_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of background obtained from AE
+# # apply to qcd training set -> obtain cluster assignment
+# cluster_assignemnts_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of background obtained from AE
  
-# plot kmeans clustering
-plot.plot_clusters(latent_coords_qcd, cluster_assignemnts_qcd, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_train, filename_suffix=params.cluster_alg+'_'+params.sample_id_train)
+# # plot kmeans clustering
+# plot.plot_clusters(latent_coords_qcd, cluster_assignemnts_qcd, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_train, filename_suffix=params.cluster_alg+'_'+params.sample_id_train)
 
 
 
@@ -109,33 +113,35 @@ latent_coords_qcd_test = pred.map_to_latent_space(data_sample=data_sample, sampl
 latent_coords_sig = pred.map_to_latent_space(data_sample=data_sample, sample_id=sample_id_sig, model=ae_model, read_n=params.read_n)
 
 # plot latent space
+plot.plot_latent_space_1D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_train, 'vs', sample_id_sig]), filename_suffix='_'.join([params.sample_id_train, 'vs', sample_id_sig]), fig_dir='fig')
+plot.plot_latent_space_1D_bg_vs_sig(latent_coords_qcd_test, latent_coords_sig, title_suffix=' '.join([sample_id_qcd_test, 'vs', sample_id_sig]), filename_suffix='_'.join([sample_id_qcd_test, 'vs', sample_id_sig]), fig_dir='fig')
 plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_train, 'vs', sample_id_sig]), filename_suffix='_'.join([params.sample_id_train, 'vs', sample_id_sig]), fig_dir='fig')
 plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd_test, latent_coords_sig, title_suffix=' '.join([sample_id_qcd_test, 'vs', sample_id_sig]), filename_suffix='_'.join([sample_id_qcd_test, 'vs', sample_id_sig]), fig_dir='fig')
 
-# apply clustering algo
-cluster_assignemnts_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
-cluster_assignemnts_qcd_test = cluster_model.predict(latent_coords_qcd_test) # latent coords of signal obtained from AE
-plot.plot_clusters(latent_coords_sig, cluster_assignemnts_sig, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_sig, filename_suffix=params.cluster_alg+'_'+sample_id_sig)
-plot.plot_clusters(latent_coords_qcd_test, cluster_assignemnts_qcd_test, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_qcd_test, filename_suffix=params.cluster_alg+'_'+sample_id_qcd_test)
+# # apply clustering algo
+# cluster_assignemnts_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
+# cluster_assignemnts_qcd_test = cluster_model.predict(latent_coords_qcd_test) # latent coords of signal obtained from AE
+# plot.plot_clusters(latent_coords_sig, cluster_assignemnts_sig, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_sig, filename_suffix=params.cluster_alg+'_'+sample_id_sig)
+# plot.plot_clusters(latent_coords_qcd_test, cluster_assignemnts_qcd_test, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_qcd_test, filename_suffix=params.cluster_alg+'_'+sample_id_qcd_test)
 
 
 
-#****************************************#
-#               METRIC
-#****************************************#
+# #****************************************#
+# #               METRIC
+# #****************************************#
 
-dist_qcd = compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_qcd, model=cluster_model)
-dist_qcd_test = compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_qcd_test, model=cluster_model)
-dist_sig = compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_sig, model=cluster_model)
+# dist_qcd = compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_qcd, model=cluster_model)
+# dist_qcd_test = compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_qcd_test, model=cluster_model)
+# dist_sig = compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_sig, model=cluster_model)
 
-if params.cluster_alg == 'kmeans':
-    xlabel = 'distance to closest cluster'
-    title = 'euclidian distance distribution qcd vs sig'
-else:
-    xlabel = 'distance to border'
-    title = 'distance to decision border distribution qcd vs sig'
+# if params.cluster_alg == 'kmeans':
+#     xlabel = 'distance to closest cluster'
+#     title = 'euclidian distance distribution qcd vs sig'
+# else:
+#     xlabel = 'distance to border'
+#     title = 'distance to decision border distribution qcd vs sig'
 
-pu.plot_bg_vs_sig([dist_qcd, dist_sig], legend=[params.sample_id_train,sample_id_sig], xlabel=xlabel, title=title, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
-pu.plot_bg_vs_sig([dist_qcd_test, dist_sig], legend=[sample_id_qcd_test, sample_id_sig], xlabel=xlabel, title=title, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
-roc.plot_roc([dist_qcd], [dist_sig], legend=[params.sample_id_train,sample_id_sig], title=' '.join([params.sample_id_train, 'vs', sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_train, 'vs', sample_id_sig, params.cluster_alg]), fig_dir='fig')
-roc.plot_roc([dist_qcd_test], [dist_sig], legend=[sample_id_qcd_test, sample_id_sig], title=' '.join([sample_id_qcd_test, 'vs', sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', sample_id_qcd_test, 'vs', sample_id_sig, params.cluster_alg]), fig_dir='fig')
+# pu.plot_bg_vs_sig([dist_qcd, dist_sig], legend=[params.sample_id_train,sample_id_sig], xlabel=xlabel, title=title, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
+# pu.plot_bg_vs_sig([dist_qcd_test, dist_sig], legend=[sample_id_qcd_test, sample_id_sig], xlabel=xlabel, title=title, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
+# roc.plot_roc([dist_qcd], [dist_sig], legend=[params.sample_id_train,sample_id_sig], title=' '.join([params.sample_id_train, 'vs', sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_train, 'vs', sample_id_sig, params.cluster_alg]), fig_dir='fig')
+# roc.plot_roc([dist_qcd_test], [dist_sig], legend=[sample_id_qcd_test, sample_id_sig], title=' '.join([sample_id_qcd_test, 'vs', sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', sample_id_qcd_test, 'vs', sample_id_sig, params.cluster_alg]), fig_dir='fig')
