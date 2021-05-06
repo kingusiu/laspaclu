@@ -143,7 +143,7 @@ def plot_clusters(latent_coords, cluster_assignemnts, cluster_centers=None, titl
     plt.close(fig)
 
 
-# not easy to plot 6D decision boundary in 2D => currently not working!
+# not obvious to plot 6D decision boundary in 2D => currently not working!
 def plot_svm_decision_boundary(model, latent_coords, cluster_assignemnts, title_suffix=None, filename_suffix=None, fig_dir='.fig'):
 
     # make regular meshgrid for latent space
