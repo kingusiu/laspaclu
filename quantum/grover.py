@@ -1,3 +1,5 @@
+import numpy as np
+
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 from qiskit.quantum_info.operators import Operator, Pauli
 
@@ -29,19 +31,22 @@ def diffuser(n):
     return diff_gate
 
 
-def grover_circuit(n, oracle):
+def grover_circuit(n, oracle, marked_idcs=1):
     
     qc = QuantumCircuit(n,n)
+
+    # Determine r
+    r = int(np.floor(np.pi/4*np.sqrt(2**n/len(marked_idcs))))
     
     # Apply a H-gate to all qubits
     for q in range(n):
         qc.h(q)
 
-    # add oracle
-    qc.append(oracle, range(n))
-    
-    # add diffuser
-    qc.append(diffuser(n), range(n))
+    for _ in range(r):
+        # add oracle
+        qc.append(oracle, range(n))   
+        # add diffuser
+        qc.append(diffuser(n), range(n))
     
      # step 3: measure all qubits
     qc.measure(range(n), range(n))
