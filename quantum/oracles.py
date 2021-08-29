@@ -3,11 +3,8 @@ import numpy as np
 from scipy import signal
 import math
 
-from qiskit import IBMQ, Aer, BasicAer, QuantumCircuit, ClassicalRegister, QuantumRegister, execute
-from qiskit.providers.ibmq import least_busy
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 from qiskit.quantum_info.operators import Operator, Pauli
-from qiskit.tools.visualization import circuit_drawer
-from qiskit.visualization import plot_histogram
 
 
 def create_threshold_oracle_operator(nn, idcs_to_mark):
