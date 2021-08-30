@@ -31,12 +31,12 @@ def diffuser(n):
     return diff_gate
 
 
-def grover_circuit(n, oracle, marked_idcs=1):
+def grover_circuit(n, oracle, marked_n=1):
     
     qc = QuantumCircuit(n,n)
 
     # Determine r
-    r = int(np.floor(np.pi/4*np.sqrt(2**n/len(marked_idcs))))
+    r = int(np.floor(np.pi/4*np.sqrt(2**n/marked_n))) if marked_n else 0
     
     # Apply a H-gate to all qubits
     for q in range(n):

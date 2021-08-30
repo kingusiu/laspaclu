@@ -21,6 +21,8 @@ def create_threshold_oracle_operator(nn, idcs_to_mark):
 
 def get_indices_to_mark(dist_arr, threshold):
     idx, = np.nonzero(dist_arr < threshold)
+    if not idx: # handle minimum element
+        idx = np.argmin(distances)
     return idx
 
 def create_threshold_oracle_set(dist_arr):
