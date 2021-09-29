@@ -62,18 +62,26 @@ def phi_circuit(a, b) -> QuantumCircuit:
 
 def overlap_circuit(a, b) -> QuantumCircuit:
     ''' full overlap circuit < phi | psi > '''
+    n = len(a)
+    if not ((n & (n-1) == 0) and n != 0):
+        raise ValueError("size of input vectors must be power of 2 but is " + str(n))
     
-    qc = QuantumCircuit(1+2+1, 1) # ancilla + psi + phi
-
     psi = psi_circuit(a, b)
-    qc.append(psi, [1,2])
     phi = phi_circuit(a, b)
-    qc.append(phi, [3])
+    
+    anc = QuantumRegister(1, 'ancilla')
+    qr_psi = QuantumRegister(psi.width(), 'psi')
+    qr_phi = QuantumRegister(phi.width(), 'phi')
+    cr = ClassicalRegister(1, 'c')
+    qc = QuantumCircuit(anc, qr_psi, qr_phi, cr)
+    
+    qc.append(psi, qr_psi[:])
+    qc.append(phi, qr_phi[:])
     
     qc.barrier()
     
     qc.h(0)
-    qc.cswap(0, 2, 3) # perform test on v1 ancilla alone
+    qc.cswap(0, qr_psi[-1], qr_phi[0]) # perform swap test on psi ancilla alone
     qc.h(0)
         
     return qc
@@ -94,3 +102,4 @@ def calc_overlap(answer, state='0'):
 def calc_dist(answer, z, state='0'):
     ''' calculate distance proportional to |a-b|**2 '''
     return calc_overlap(answer, state)*2*z
+
