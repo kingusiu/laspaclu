@@ -7,6 +7,7 @@ import tensorflow as tf
 import numpy as np
 from collections import namedtuple
 from sklearn import svm
+import joblib as jli
 
 import data.data_sample as dasa
 import inference.train_autoencoder as train
@@ -17,12 +18,12 @@ import anpofah.util.plotting_util as pu
 import anpofah.model_analysis.roc_analysis as roc
 
 
-def make_model_path(date=None):
+def make_model_path(date=None, prefix='AE'):
     date_str = ''
     if date is None:
         date = datetime.date.today()
         date = '{}{:02d}{:02d}'.format(date.year, date.month, date.day)
-    path = os.path.join('models/saved', 'AEmodel_{}'.format(date))
+    path = os.path.join('models/saved', prefix+'model_{}'.format(date))
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     return path
 
@@ -46,9 +47,9 @@ def compute_metric_score(algo_str, coords, model):
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'load_ae epochs read_n sample_id_train cluster_alg')
-params = Parameters(load_ae=True, epochs=200, read_n=int(1e5), sample_id_train='qcdSide', cluster_alg='one_class_svm')
+params = Parameters(load_ae=False, epochs=200, read_n=int(2e6), sample_id_train='qcdSide', cluster_alg='kmeans')
 
-model_path = make_model_path('20210416')
+model_path_ae = make_model_path(prefix='AE')
 data_sample = dasa.DataSample(params.sample_id_train)
 
 
@@ -57,14 +58,14 @@ data_sample = dasa.DataSample(params.sample_id_train)
 #****************************************#
 
 if params.load_ae:
-    ae_model = tf.saved_model.load(model_path)
+    ae_model = tf.saved_model.load(model_path_ae)
 
 else:
     # train AE model
     ae_model = train.train(data_sample, epochs=params.epochs, read_n=params.read_n)
 
     # model save /load
-    tf.saved_model.save(ae_model, model_path) 
+    tf.saved_model.save(ae_model, model_path_ae) 
 
 # apply AE model
 latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, sample_id=params.sample_id_train, model=ae_model, read_n=params.read_n)
@@ -76,27 +77,31 @@ latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, sample_id=
 #****************************************#
 #               KMEANS
 
-# if params.cluster_alg == 'kmeans':
+if params.cluster_alg == 'kmeans':
 
-#     print('>>> training kmeans')
-#     cluster_model = cluster.train_kmeans(latent_coords_qcd)
-#     cluster_centers = cluster_model.cluster_centers_
-
-# #****************************************#
-# #           ONE CLASS SVM
-
-# else:
-
-#     print('>>> training one class svm')
-#     cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
-#     cluster_centers = None # no cluster centers for one class svm
+    print('>>> training kmeans')
+    cluster_model = cluster.train_kmeans(latent_coords_qcd)
+    cluster_centers = cluster_model.cluster_centers_
+    # save
+    model_path_km = make_model_path(prefix='KM')
+    jli.dump(cluster_model, model_path_km+'.joblib') 
 
 
-# # apply to qcd training set -> obtain cluster assignment
-# cluster_assignemnts_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of background obtained from AE
+#****************************************#
+#           ONE CLASS SVM
+
+else:
+
+    print('>>> training one class svm')
+    cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
+    cluster_centers = None # no cluster centers for one class svm
+
+
+# apply to qcd training set -> obtain cluster assignment
+cluster_assignemnts_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of background obtained from AE
  
-# # plot kmeans clustering
-# plot.plot_clusters(latent_coords_qcd, cluster_assignemnts_qcd, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_train, filename_suffix=params.cluster_alg+'_'+params.sample_id_train)
+# plot kmeans clustering
+plot.plot_clusters(latent_coords_qcd, cluster_assignemnts_qcd, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_train, filename_suffix=params.cluster_alg+'_'+params.sample_id_train)
 
 
 
