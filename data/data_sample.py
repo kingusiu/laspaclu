@@ -61,7 +61,7 @@ class DataSample():
         return train_dataset, valid_dataset, test_dataset  
 
 
-    def get_dataset_for_inference(self, sample_id, read_n=None, batch_sz=1024):
+    def get_dataset_for_inference(self, sample_id, read_n=None, batch_sz=256):
         jets = self.read_dataset(sample_id, read_n)
         return tf.data.Dataset.from_tensor_slices(jets).batch(batch_sz)
 
