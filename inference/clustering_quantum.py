@@ -1,5 +1,10 @@
 import numpy as np
-import quantum as qua
+import quantum.dist_calc as dica
+import quantum.minimization as mini
+
+def calc_new_cluster_centers(data, cluster_assignments, n_clusters=2):
+    return np.array([data[cluster_assignments == i].mean(axis=0) for i in range(n_clusters)])
+
 
 def train_qmeans(data, n_clusters=2): 
     """
@@ -9,21 +14,36 @@ def train_qmeans(data, n_clusters=2):
     """
 
     # init cluster centers randomly
-    cluster_centers = (np.random.random(size=(n_clusters, data.shape[1]))-0.5)*10
+    idx = np.random.choice(len(data), size=n_clusters, replace=False)
+    cluster_centers = data[idx]
 
-    distances = np.empty(shape=(len(data), n_clusters))
+    # loop until convergence
+    while True:
 
-    # for each sample
-    for i, sample in enumerate(data):
+        cluster_assignments = []
 
-        distances = []
+        # for each sample
+        for i, sample in enumerate(data):
 
-        # calculate distance to centers
-        for cluster_center in cluster_centers:
+            distances = []
 
-            qc = qua.overlap_circuit(sample, cluster_center)
-            counts = qua.run_circuit(qc)
-            distances.append(qua.calc_dist(counts, qua.calc_z(sample, cluster_center)))
+            # calculate distance to each center
+            for cluster_center in cluster_centers:
 
-        # find closest cluster (duerr & hoyer minimization)
+                qc = dica.overlap_circuit(sample, cluster_center)
+                counts = dica.run_circuit(qc)
+                distances.append(dica.calc_dist(counts, dica.calc_z(sample, cluster_center)))
+
+            # find closest cluster (duerr & hoyer minimization)
+            closest_cluster = mini.duerr_hoyer_minimization(distances)
+            cluster_assignments.append(closest_cluster)
+
+        new_centers = calc_new_cluster_centers(data, cluster_assignments)
+
+        if np.allclose(new_centers, cluster_centers):
+            break
+
+        cluster_centers = new_centers
+
+    return cluster_centers
 

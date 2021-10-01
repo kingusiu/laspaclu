@@ -33,7 +33,7 @@ def duerr_hoyer_minimization(distances):
         
         # pick next threshold
         threshold = distances[idx]
-        print('next minimum guess: dist[{}] = {}'.format(idx, threshold))
+        #print('next minimum guess: dist[{}] = {}'.format(idx, threshold))
         marked_n = len(ora.get_indices_to_mark(distances, threshold))
         
         # create oracle combi and grover algo
@@ -45,6 +45,6 @@ def duerr_hoyer_minimization(distances):
         counts = execute(grover_qc, backend=simulator, shots=1000).result().get_counts(grover_qc)
         idx = measure_by_prob(counts, len(distances))
         
-    print('final minimum found dist[{}] = {}'.format(idx, distances[idx]))
-    return distances[idx]
+    #print('final minimum found dist[{}] = {}'.format(idx, distances[idx]))
+    return idx
 
