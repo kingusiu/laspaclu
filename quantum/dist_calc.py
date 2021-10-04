@@ -20,13 +20,14 @@ def psi_amp(a, b):
     
     a_norm = normalize(a)
     b_norm = normalize(b)
+
+    # import ipdb; ipdb.set_trace()
     
     return np.hstack([a_norm, b_norm]) * (1/np.sqrt(2))
 
 
 def phi_amp(a, b):
     ''' prepare amplitudes for state phi '''
-
 
     z = calc_z(a, b)
     a_mag =  np.linalg.norm(a)

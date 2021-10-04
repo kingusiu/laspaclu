@@ -29,8 +29,9 @@ class DataSample():
         return particles_j1, particles_j2
 
 
-    def read_jets(self, sample_id, read_n=None, shuffle=True, **cuts): # -> nd.array [jet1_n+jet2_n, 100, 3]
-
+    def read_jets(self, sample_id, read_n=None, shuffle=True): # -> nd.array [jet1_n+jet2_n, 100, 3]
+    
+        cuts = cuco.sideband_cuts if 'Side' in sample_id else cuco.signalregion_cuts
         particles_j1, particles_j2 = self.read_particles(sample_id=sample_id, read_n=read_n, **cuts)
         jets = np.vstack([particles_j1, particles_j2])
         if shuffle:
@@ -39,13 +40,12 @@ class DataSample():
 
 
     def read_dataset(self, sample_id, read_n=None):
-        cuts = cuco.sideband_cuts if 'Side' in sample_id else cuco.signalregion_cuts
-        return self.read_jets(sample_id=sample_id, read_n=read_n, shuffle=False, **cuts)
+        return self.read_jets(sample_id=sample_id, read_n=read_n, shuffle=False)
 
 
     def get_datasets_for_training(self, batch_sz=256, read_n=int(1e5), test_dataset=True):
 
-        self.jets = self.read_dataset(self.sample_id)
+        self.jets = self.read_dataset(self.sample_id, read_n=read_n)
 
         train_valid_split = int(len(self.jets)*0.8)
         train_dataset = tf.data.Dataset.from_tensor_slices(self.jets[:train_valid_split]).batch(batch_sz, drop_remainder=True)
@@ -55,7 +55,7 @@ class DataSample():
             return train_dataset, valid_dataset
 
         # test dataset
-        jets_test = self.read_jets(self.sample_id+'Ext', int(read_n/10), **cuts)
+        jets_test = self.read_jets(self.sample_id+'Ext', int(read_n/10))
         test_dataset = tf.data.Dataset.from_tensor_slices(jets_test).batch(batch_sz)
 
         return train_dataset, valid_dataset, test_dataset  
@@ -70,7 +70,6 @@ class DataSample():
         # read data if none was read yet
         if self.jets is None:
             sample_id = sample_id or self.sample_id
-            cuts = cuco.sideband_cuts if 'Side' in sample_id else cuco.signalregion_cuts
-            self.jets = self.read_jets(sample_id=sample_id, read_n=read_n, **cuts) # TODO: problematic to pass SB cuts here!
+            self.jets = self.read_jets(sample_id=sample_id, read_n=read_n) # TODO: problematic to pass SB cuts here!
         
         return utfu.get_mean_and_stdev(self.jets)

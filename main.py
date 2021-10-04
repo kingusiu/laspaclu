@@ -29,13 +29,13 @@ def make_model_path(date=None, prefix='AE'):
     return path
 
 # euclidian distance to cluster center
-dist_to_cluster_center = lambda a,b: np.sqrt(np.sum((a-b)**2,axis=1))
+dist_to_cluster_center = lambda a,b: np.sum((a-b)**2,axis=1)
 
 
 def compute_metric_score(algo_str, coords, model):
     # compute euclidian distance to closest cluster center for kmeans
     if algo_str == 'kmeans':
-        return np.sqrt(np.sum(model.transform(coords)**2, axis=1))
+        return np.sum(model.transform(coords)**2, axis=1)
     # compute squared distance to separating hyperplane (shifting to all < 0) => Losing info of inlier vs outlier in this way (???)
     elif algo_str == 'one_class_svm':
         distances = model.decision_function(coords)
@@ -43,12 +43,22 @@ def compute_metric_score(algo_str, coords, model):
         return distances**2
 
 
+def compute_quantum_metric_score(sample_dist, cluster_assign, metric_type='sum_all_dist'):
+    # compute squared sum of all distances
+    if metric_type == 'sum_all_dist':
+        return np.sum(sample_dist**2, axis=1)
+    # compute squared dist to closest cluster
+    else: 
+        return sample_dist[range(len(sample_dist)), cluster_assign]**2
+
+
+
 #****************************************#
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', 'load_ae epochs read_n sample_id_train cluster_alg')
-params = Parameters(load_ae=False, epochs=200, read_n=int(1e5), sample_id_train='qcdSide', cluster_alg='kmeans')
+Parameters = namedtuple('Parameters', 'load_ae epochs latent_dim read_n sample_id_train cluster_alg')
+params = Parameters(load_ae=True, epochs=200, latent_dim=8, read_n=int(1e3), sample_id_train='qcdSide', cluster_alg='kmeans')
 
 model_path_ae = make_model_path(prefix='AE')
 data_sample = dasa.DataSample(params.sample_id_train)
@@ -63,7 +73,8 @@ if params.load_ae:
 
 else:
     # train AE model
-    ae_model = train.train(data_sample, epochs=params.epochs, read_n=params.read_n)
+    print('>>> training autoencoder')
+    ae_model = train.train(data_sample, epochs=params.epochs, latent_dim=params.latent_dim, read_n=params.read_n)
 
     # model save /load
     tf.saved_model.save(ae_model, model_path_ae) 
@@ -125,10 +136,10 @@ plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_
 plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd_test, latent_coords_sig, title_suffix=' '.join([sample_id_qcd_test, 'vs', sample_id_sig]), filename_suffix='_'.join([sample_id_qcd_test, 'vs', sample_id_sig]), fig_dir='fig')
 
 # apply clustering algo
-cluster_assignemnts_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
-cluster_assignemnts_qcd_test = cluster_model.predict(latent_coords_qcd_test) # latent coords of signal obtained from AE
-plot.plot_clusters(latent_coords_sig, cluster_assignemnts_sig, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_sig, filename_suffix=params.cluster_alg+'_'+sample_id_sig)
-plot.plot_clusters(latent_coords_qcd_test, cluster_assignemnts_qcd_test, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_qcd_test, filename_suffix=params.cluster_alg+'_'+sample_id_qcd_test)
+cluster_assign_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
+cluster_assign_qcd_test = cluster_model.predict(latent_coords_qcd_test) # latent coords of signal obtained from AE
+plot.plot_clusters(latent_coords_sig, cluster_assign_sig, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_sig, filename_suffix=params.cluster_alg+'_'+sample_id_sig)
+plot.plot_clusters(latent_coords_qcd_test, cluster_assign_qcd_test, cluster_centers, title_suffix=params.cluster_alg+' '+sample_id_qcd_test, filename_suffix=params.cluster_alg+'_'+sample_id_qcd_test)
 
 
 
@@ -160,4 +171,23 @@ roc.plot_roc([dist_qcd_test], [dist_sig], legend=[sample_id_qcd_test, sample_id_
 ## train quantum kmeans
 
 print('>>> training qmeans')
-cluster_q_model = cluster_q.train_qmeans(latent_coords_qcd)
+cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd)
+
+# apply clustering algo
+cluster_q_assign_qcd, q_dist_qcd = cluster_q.assign_clusters(latent_coords_qcd, cluster_q_centers) # latent coords of qcd train obtained from AE
+cluster_q_assign_qcd_test, q_dist_qcd_test = cluster_q.assign_clusters(latent_coords_qcd_test, cluster_q_centers) # latent coords of qcd test obtained from AE
+cluster_q_assign_sig, q_dist_sig = cluster_q.assign_clusters(latent_coords_sig, cluster_q_centers) # latent coords of signal obtained from AE
+plot.plot_clusters(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+sample_id_train, filename_suffix='quantum_'+params.cluster_alg+'_'+sample_id_train)
+plot.plot_clusters(latent_coords_qcd_test, cluster_q_assign_qcd_test, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+sample_id_qcd_test, filename_suffix='quantum_'+params.cluster_alg+'_'+sample_id_qcd_test)
+plot.plot_clusters(latent_coords_sig, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+sample_id_sig, filename_suffix='quantum_'+params.cluster_alg+'_'+sample_id_sig)
+
+dist_q_qcd = compute_quantum_metric_score(q_dist_qcd, cluster_q_assign_qcd)
+dist_q_qcd_test = compute_quantum_metric_score(q_dist_qcd_test, cluster_q_assign_qcd_test)
+dist_q_sig = compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
+
+title = 'quantum ' + title
+
+pu.plot_bg_vs_sig([dist_q_qcd, dist_q_sig], legend=[params.sample_id_train,sample_id_sig], xlabel=xlabel, title=title, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
+pu.plot_bg_vs_sig([dist_q_qcd_test, dist_q_sig], legend=[sample_id_qcd_test, sample_id_sig], xlabel=xlabel, title=title, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
+roc.plot_roc([dist_q_qcd], [dist_q_sig], legend=[params.sample_id_train,sample_id_sig], title=' '.join(['quantum', params.sample_id_train, 'vs', sample_id_sig, params.cluster_alg]), plot_name='_'.join(['quantum', 'ROC', params.sample_id_train, 'vs', sample_id_sig, params.cluster_alg]), fig_dir='fig')
+roc.plot_roc([dist_q_qcd_test], [dist_q_sig], legend=[sample_id_qcd_test, sample_id_sig], title=' '.join(['quantum', sample_id_qcd_test, 'vs', sample_id_sig, params.cluster_alg]), plot_name='_'.join(['quantum', 'ROC', sample_id_qcd_test, 'vs', sample_id_sig, params.cluster_alg]), fig_dir='fig')
