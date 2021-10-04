@@ -83,9 +83,11 @@ def overlap_circuit(a, b) -> QuantumCircuit:
     qc.barrier()
     
     qc.h(0)
-    qc.cswap(0, qr_psi[-1], qr_phi[0]) # perform swap test on psi ancilla alone
+    qc.cswap(0, qr_psi[-1], qr_phi[0]) # perform test on psi ancilla alone
     qc.h(0)
-        
+    
+    qc.measure(0,0)
+    
     return qc
 
 
@@ -98,7 +100,7 @@ def calc_overlap(answer, state='0'):
     ''' calculate overlap from experiment measurements '''
 
     shots = answer[state] if len(answer) == 1 else answer['0']+answer['1']
-    return np.abs(counts[state]/1000 - 0.5)*2
+    return np.abs(answer[state]/1000 - 0.5)*2
 
 
 def calc_dist(answer, z, state='0'):

@@ -33,6 +33,8 @@ def assign_clusters(data, cluster_centers):
     # for each sample
     for i, sample in enumerate(data):
 
+        # import ipdb; ipdb.set_trace()
+
         dist = quantum_distance_to_centers(sample, cluster_centers)
 
         # find closest cluster index (duerr & hoyer minimization)
@@ -43,7 +45,7 @@ def assign_clusters(data, cluster_centers):
     return np.asarray(cluster_assignments), np.asarray(distances) 
 
 
-def train_qmeans(data, n_clusters=2): 
+def train_qmeans(data, n_clusters=2):
     """
         train quantum k-means 
         :param data: input array of shape [N x Z] where N .. number of samples, Z .. dimension of latent space
@@ -55,9 +57,9 @@ def train_qmeans(data, n_clusters=2):
     cluster_centers = data[idx]
 
     # loop until convergence
-    while True:
+    for i in range(15): #while True:
 
-        cluster_assignments = assign_clusters(data, cluster_centers)
+        cluster_assignments, _ = assign_clusters(data, cluster_centers)
 
         new_centers = calc_new_cluster_centers(data, cluster_assignments)
 
@@ -66,5 +68,6 @@ def train_qmeans(data, n_clusters=2):
 
         cluster_centers = new_centers
 
+    print('[clustering_quantum:train_qmeans] >>> cluster centers converged')
     return cluster_centers
 

@@ -58,7 +58,7 @@ def compute_quantum_metric_score(sample_dist, cluster_assign, metric_type='sum_a
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'load_ae load_km epochs latent_dim read_n sample_id_train cluster_alg')
-params = Parameters(load_ae=True, load_km=False, epochs=200, latent_dim=8, read_n=int(1e3), sample_id_train='qcdSide', cluster_alg='kmeans')
+params = Parameters(load_ae=True, load_km=True, epochs=200, latent_dim=8, read_n=int(1e2), sample_id_train='qcdSide', cluster_alg='kmeans')
 
 model_path_ae = make_model_path(prefix='AE')
 data_sample = dasa.DataSample(params.sample_id_train)
