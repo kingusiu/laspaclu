@@ -57,8 +57,8 @@ def compute_quantum_metric_score(sample_dist, cluster_assign, metric_type='sum_a
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', 'load_ae epochs latent_dim read_n sample_id_train cluster_alg')
-params = Parameters(load_ae=True, epochs=200, latent_dim=8, read_n=int(1e3), sample_id_train='qcdSide', cluster_alg='kmeans')
+Parameters = namedtuple('Parameters', 'load_ae load_km epochs latent_dim read_n sample_id_train cluster_alg')
+params = Parameters(load_ae=True, load_km=False, epochs=200, latent_dim=8, read_n=int(1e3), sample_id_train='qcdSide', cluster_alg='kmeans')
 
 model_path_ae = make_model_path(prefix='AE')
 data_sample = dasa.DataSample(params.sample_id_train)
@@ -91,12 +91,19 @@ latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, sample_id=
 
 if params.cluster_alg == 'kmeans':
 
-    print('>>> training kmeans')
-    cluster_model = cluster.train_kmeans(latent_coords_qcd)
-    cluster_centers = cluster_model.cluster_centers_
-    # save
     model_path_km = make_model_path(prefix='KM')
-    jli.dump(cluster_model, model_path_km+'.joblib') 
+
+    if params.load_km:
+
+        cluster_model = jli.load(model_path_km+'.joblib')
+
+    else:
+        print('>>> training kmeans')
+        cluster_model = cluster.train_kmeans(latent_coords_qcd)
+        # save
+        jli.dump(cluster_model, model_path_km+'.joblib') 
+    
+    cluster_centers = cluster_model.cluster_centers_
 
 
 #****************************************#

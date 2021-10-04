@@ -2,11 +2,12 @@ import numpy as np
 
 # import Qiskit
 from qiskit import Aer, IBMQ, execute, assemble, transpile
-from qiskit import QuantumCircuit
+from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 
 
 def normalize(v):
     return v / np.linalg.norm(v)
+
 
 def calc_z(a, b) -> float:
     ''' z = |a|**2 + |b|**2 '''
