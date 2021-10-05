@@ -57,13 +57,13 @@ def train_qmeans(data, n_clusters=2):
     cluster_centers = data[idx]
 
     # loop until convergence
-    for i in range(15): #while True:
+    while True:
 
         cluster_assignments, _ = assign_clusters(data, cluster_centers)
 
         new_centers = calc_new_cluster_centers(data, cluster_assignments)
 
-        if np.allclose(new_centers, cluster_centers):
+        if np.allclose(new_centers, cluster_centers, rtol=1.e-1):
             break
 
         cluster_centers = new_centers
