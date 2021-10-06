@@ -9,9 +9,7 @@ from sklearn import svm
 import joblib as jli
 
 import data.data_sample as dasa
-import inference.train_autoencoder as train
 import inference.predict_autoencoder as pred
-import inference.clustering_classic as cluster
 import inference.clustering_quantum as cluster_q
 import inference.metrics as metr
 import analysis.plotting as plot
@@ -26,16 +24,17 @@ import anpofah.model_analysis.roc_analysis as roc
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', 'load_ae load_km epochs latent_dim read_n sample_id_train cluster_alg')
-params = Parameters(load_ae=True, load_km=False, epochs=200, latent_dim=8, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans')
+Parameters = namedtuple('Parameters', 'load_km latent_dim read_n sample_id_train cluster_alg')
+params = Parameters(load_km=False, latent_dim=8, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans')
 
-model_path_ae = pers.make_model_path(date='20211004', prefix='AE')
 data_sample = dasa.DataSample(params.sample_id_train)
 
 
 #****************************************#
 #           Autoencoder
 #****************************************#
+
+model_path_ae = pers.make_model_path(date='20211004', prefix='AE')
 
 print('[main] >>> loading autoencoder ' + model_path_ae)
 ae_model = tf.saved_model.load(model_path_ae)
@@ -53,18 +52,10 @@ latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, sample_id=
 
 if params.cluster_alg == 'kmeans':
 
-    model_path_km = pers.make_model_path(prefix='KM')
+    model_path_km = pers.make_model_path(date='20211006', prefix='KM')
+    print('[main] >>> loading clustering model ' + model_path_km)
 
-    if params.load_km:
-
-        cluster_model = jli.load(model_path_km+'.joblib')
-
-    else:
-        print('>>> training kmeans')
-        cluster_model = cluster.train_kmeans(latent_coords_qcd)
-        # save
-        jli.dump(cluster_model, model_path_km+'.joblib') 
-    
+    cluster_model = jli.load(model_path_km+'.joblib')    
     cluster_centers = cluster_model.cluster_centers_
 
 
@@ -73,8 +64,10 @@ if params.cluster_alg == 'kmeans':
 
 else:
 
-    print('>>> training one class svm')
-    cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
+    model_path_svm = pers.make_model_path(date='20211006', prefix='SVM')
+    print('[main] >>> loading clustering model ' + model_path_svm)
+
+    cluster_model = jli.load(model_path_svm+'.joblib')    
     cluster_centers = None # no cluster centers for one class svm
 
 
@@ -137,14 +130,10 @@ roc.plot_roc([dist_qcd_test], [dist_sig], legend=[sample_id_qcd_test, sample_id_
 #               QUANTUM CLUSTERING
 #****************************************#
 
-## train quantum kmeans
-
-print('>>> training qmeans')
-cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd)
-
-model_path_qm = make_model_path(prefix='QM') + '.npy'
-with open(model_path_qm, 'wb') as f:
-    np.save(f, cluster_q_centers)
+print('>>> loading qmeans')
+model_path_qm = make_model_path(date='20211006', prefix='QM') + '.npy'
+with open(model_path_qm, 'rb') as f:
+    cluster_q_centers = np.load(f, cluster_q_centers)
 
 
 # apply clustering algo
