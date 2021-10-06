@@ -25,9 +25,7 @@ import anpofah.model_analysis.roc_analysis as roc
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'load_km latent_dim read_n sample_id_train cluster_alg')
-params = Parameters(load_km=False, latent_dim=8, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans')
-
-data_sample = dasa.DataSample(params.sample_id_train)
+params = Parameters(load_km=False, latent_dim=8, read_n=int(1e4), sample_id_qcd='qcdSideExt', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
 
 
 #****************************************#
@@ -40,7 +38,8 @@ print('[main] >>> loading autoencoder ' + model_path_ae)
 ae_model = tf.saved_model.load(model_path_ae)
 
 # apply AE model
-latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, sample_id=params.sample_id_train, model=ae_model, read_n=params.read_n)
+data_sample_qcd = dasa.DataSample(params.sample_id_qcd)
+latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample_qcd, sample_id=params.sample_id_train, model=ae_model, read_n=params.read_n)
 
 
 #****************************************#
@@ -131,7 +130,7 @@ roc.plot_roc([dist_qcd_test], [dist_sig], legend=[sample_id_qcd_test, sample_id_
 #****************************************#
 
 print('>>> loading qmeans')
-model_path_qm = make_model_path(date='20211006', prefix='QM') + '.npy'
+model_path_qm = pers.make_model_path(date='20211006', prefix='QM') + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f, cluster_q_centers)
 

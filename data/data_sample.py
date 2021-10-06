@@ -30,7 +30,9 @@ class DataSample():
 
 
     def read_jets(self, sample_id, read_n=None, shuffle=True): # -> nd.array [jet1_n+jet2_n, 100, 3]
-    
+
+        """ main method to read training data for AE """
+
         cuts = cuco.sideband_cuts if 'Side' in sample_id else cuco.signalregion_cuts
         particles_j1, particles_j2 = self.read_particles(sample_id=sample_id, read_n=read_n, **cuts)
         jets = np.vstack([particles_j1, particles_j2])
@@ -39,13 +41,9 @@ class DataSample():
         return jets
 
 
-    def read_dataset(self, sample_id, read_n=None):
-        return self.read_jets(sample_id=sample_id, read_n=read_n, shuffle=False)
-
-
     def get_datasets_for_training(self, batch_sz=256, read_n=int(1e5), test_dataset=True):
 
-        self.jets = self.read_dataset(self.sample_id, read_n=read_n)
+        self.jets = self.read_jets(self.sample_id, read_n=read_n)
 
         train_valid_split = int(len(self.jets)*0.8)
         train_dataset = tf.data.Dataset.from_tensor_slices(self.jets[:train_valid_split]).batch(batch_sz, drop_remainder=True)
@@ -61,8 +59,9 @@ class DataSample():
         return train_dataset, valid_dataset, test_dataset  
 
 
-    def get_dataset_for_inference(self, sample_id, read_n=None, batch_sz=256):
-        jets = self.read_dataset(sample_id, read_n)
+    def get_dataset_for_inference(self, read_n=None, batch_sz=256):
+        """ batched dataset """
+        jets = self.read_jets(self.sample_id, read_n)
         return tf.data.Dataset.from_tensor_slices(jets).batch(batch_sz)
 
 

@@ -52,16 +52,21 @@ def train_qmeans(data, n_clusters=2):
         :return: np.ndarray of cluster centers
     """
 
+    #import ipdb; ipdb.set_trace()
+
     # init cluster centers randomly
     idx = np.random.choice(len(data), size=n_clusters, replace=False)
     cluster_centers = data[idx]
 
     # loop until convergence
+    i = 0
     while True:
 
         cluster_assignments, _ = assign_clusters(data, cluster_centers)
 
         new_centers = calc_new_cluster_centers(data, cluster_assignments)
+        print('[clustering_quantum:train_qmeans] >>> iter {}: new centers {}'.format(i,new_centers))
+        i = i+1
 
         if np.allclose(new_centers, cluster_centers, rtol=1.e-1):
             break
