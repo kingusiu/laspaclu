@@ -32,9 +32,7 @@ print('[main] >>> loading autoencoder ' + model_path_ae)
 ae_model = tf.saved_model.load(model_path_ae)
 
 # apply AE model
-latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, sample_id=params.sample_id_train, model=ae_model, read_n=params.read_n)
-
-
+latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, model=ae_model, read_n=params.read_n)
 
 
 #****************************************#

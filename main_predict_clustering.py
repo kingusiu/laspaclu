@@ -24,8 +24,8 @@ import anpofah.model_analysis.roc_analysis as roc
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', 'load_km latent_dim read_n sample_id_train cluster_alg')
-params = Parameters(load_km=False, latent_dim=8, read_n=int(1e4), sample_id_qcd='qcdSideExt', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
+Parameters = namedtuple('Parameters', 'read_n sample_id_qcd sample_id_sig cluster_alg')
+params = Parameters(read_n=int(1e4), sample_id_qcd='qcdSideExt', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
 
 
 #****************************************#

@@ -31,7 +31,9 @@ class DataSample():
 
     def read_jets(self, sample_id, read_n=None, shuffle=True): # -> nd.array [jet1_n+jet2_n, 100, 3]
 
-        """ main method to read training data for AE """
+        """ main method to read training data for AE 
+            returns stacked J1 & J2 dataset
+        """
 
         cuts = cuco.sideband_cuts if 'Side' in sample_id else cuco.signalregion_cuts
         particles_j1, particles_j2 = self.read_particles(sample_id=sample_id, read_n=read_n, **cuts)
@@ -61,6 +63,7 @@ class DataSample():
 
     def get_dataset_for_inference(self, read_n=None, batch_sz=256):
         """ batched dataset """
+        
         jets = self.read_jets(self.sample_id, read_n)
         return tf.data.Dataset.from_tensor_slices(jets).batch(batch_sz)
 
