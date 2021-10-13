@@ -18,13 +18,15 @@ import util.persistence as pers
 import anpofah.util.plotting_util as pu
 import anpofah.model_analysis.roc_analysis as roc
 import pofah.path_constants.sample_dict_file_parts_input as sdi
-
+import pofah.util.event_sample as evsa
+import pofah.jet_sample as jesa
 
 
 #****************************************#
 #           Runtime Params
 #****************************************#
 
+mG = 3500
 Parameters = namedtuple('Parameters', 'run read_n sample_id_qcd sample_id_sig cluster_alg')
 params = Parameters(run=10, read_n=int(1e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
 fig_dir = 'fig/run_'+str(run)
@@ -76,10 +78,10 @@ else:
 
 # read samples
 paths = safa.SamplePathDirFactory(sdi.path_dict)
-data_sample_qcd = evsa.EventSample.from_input_dir(name=params.sample_id_qcd, path=paths.sample_dir_path(params.sample_id_qcd), read_n=read_n)
-p1_qcd, p2_qcd = data_sample_qcd.get_particles() 
-data_sample_sig = evsa.EventSample.from_input_dir(name=params.sample_id_sig, path=paths.sample_dir_path(params.sample_id_sig), read_n=read_n)
-p1_sig, p2_sig = data_sample_sig.get_particles() 
+sample_qcd = evsa.EventSample.from_input_dir(name=params.sample_id_qcd, path=paths.sample_dir_path(params.sample_id_qcd), read_n=read_n)
+p1_qcd, p2_qcd = sample_qcd.get_particles() 
+sample_sig = evsa.EventSample.from_input_dir(name=params.sample_id_sig, path=paths.sample_dir_path(params.sample_id_sig), read_n=read_n)
+p1_sig, p2_sig = sample_sig.get_particles() 
 
 # apply AE model
 latent_coords_qcd = pred.map_to_latent_space(data_sample=np.vstack([p1_qcd, p2_qcd]), model=ae_model, read_n=params.read_n)
@@ -134,6 +136,25 @@ dist_q_qcd = metr.compute_quantum_metric_score(q_dist_qcd, cluster_q_assign_qcd)
 dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 
 
+
+#****************************************#
+#               WRITE RESULTS
+#****************************************#
+
+output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(run)
+pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+# qcd results
+sample_qcd_out = jesa.JetSample.from_event_sample(sample_qcd)
+sample_qcd_out.add_feature('classic_loss', dist_qcd)
+sample_qcd_out.add_feature('quantum_loss', dist_q_qcd)
+sample_qcd_out.dump(output_dir)
+# signal results
+sample_sig_out = jesa.JetSample.from_event_sample(sample_sig)
+sample_sig_out.add_feature('classic_loss', dist_sig)
+sample_sig_out.add_feature('quantum_loss', dist_q_sig)
+sample_sig_out.dump(output_dir)
+
 #****************************************#
 #               ANALYSIS
 #****************************************#
@@ -142,11 +163,4 @@ pu.plot_bg_vs_sig([dist_qcd, dist_sig], legend=[params.sample_id_qcd, params.sam
 title = 'quantum ' + title
 pu.plot_bg_vs_sig([dist_q_qcd, dist_q_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, ylogscale=True, fig_format='.png')
 roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], title=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir)
-
-#****************************************#
-#               WRITE RESULTS
-#****************************************#
-
-output_dir = "/eos/user/k/kiwoznia/data/VAE_results/events/run_"+str(run)
-
-
+# todo: plot binned ROC
