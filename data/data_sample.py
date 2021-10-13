@@ -29,7 +29,7 @@ class DataSample():
         return particles_j1, particles_j2
 
 
-    def read_jets(self, sample_id, read_n=None, shuffle=True): # -> nd.array [jet1_n+jet2_n, 100, 3]
+    def read_particles_dijet(self, sample_id, read_n=None, shuffle=True): # -> nd.array [jet1_n+jet2_n, 100, 3]
 
         """ main method to read training data for AE 
             returns stacked J1 & J2 dataset
@@ -45,7 +45,7 @@ class DataSample():
 
     def get_datasets_for_training(self, batch_sz=256, read_n=int(1e5), test_dataset=True):
 
-        self.jets = self.read_jets(self.sample_id, read_n=read_n)
+        self.jets = self.read_particles_dijet(self.sample_id, read_n=read_n)
 
         train_valid_split = int(len(self.jets)*0.8)
         train_dataset = tf.data.Dataset.from_tensor_slices(self.jets[:train_valid_split]).batch(batch_sz, drop_remainder=True)
@@ -55,7 +55,7 @@ class DataSample():
             return train_dataset, valid_dataset
 
         # test dataset
-        jets_test = self.read_jets(self.sample_id+'Ext', int(read_n/10))
+        jets_test = self.read_particles_dijet(self.sample_id+'Ext', int(read_n/10))
         test_dataset = tf.data.Dataset.from_tensor_slices(jets_test).batch(batch_sz)
 
         return train_dataset, valid_dataset, test_dataset  
@@ -64,7 +64,7 @@ class DataSample():
     def get_dataset_for_inference(self, read_n=None, batch_sz=256):
         """ batched dataset """
         
-        jets = self.read_jets(self.sample_id, read_n)
+        jets = self.read_particles_dijet(self.sample_id, read_n)
         return tf.data.Dataset.from_tensor_slices(jets).batch(batch_sz)
 
 
@@ -72,6 +72,6 @@ class DataSample():
         # read data if none was read yet
         if self.jets is None:
             sample_id = sample_id or self.sample_id
-            self.jets = self.read_jets(sample_id=sample_id, read_n=read_n) # TODO: problematic to pass SB cuts here!
+            self.jets = self.read_particles_dijet(sample_id=sample_id, read_n=read_n) # TODO: problematic to pass SB cuts here!
         
         return utfu.get_mean_and_stdev(self.jets)

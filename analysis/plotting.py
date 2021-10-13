@@ -75,7 +75,7 @@ def plot_latent_space_1D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, fil
     plut.plot_bg_vs_sig_multihist(list(latent_bg.T), list(latent_sig.T), subtitles=subtitles, suptitle=suptitle, plot_name=plot_name)
 
 
-def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig'):
+def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig', contour_labels=False):
     '''
         plot latent space coordinates by slices of 2D
         latent_coords ... ndarray of sim [M x K] containing M samples with each K latent coordinates
@@ -105,11 +105,12 @@ def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, fil
         cont_bg = ax.contour(heat_bg.T, cmap=cm.get_cmap('Blues')) #, norm=colors.LogNorm(), colors=colors_bg, extent=extent, levels=levels_n)
         cont_sig = ax.contour(heat_sig.T, cmap=cm.get_cmap('Oranges')) #, norm=colors.LogNorm(), colors=colors_sig, extent=extent, levels=levels_n)
         ax.set_title('dims {} & {}'.format(d*2+1, d*2+2), fontsize='small')
-        ax.clabel(cont_bg, colors='k', fontsize=5.)
-        ax.clabel(cont_sig, colors='k', fontsize=5.)
+        if contour_labels:
+            ax.clabel(cont_bg, colors='k', fontsize=5.)
+            ax.clabel(cont_sig, colors='k', fontsize=5.)
         
-    fig.colorbar(cont_bg, ax=axs.flat[-1])
-    fig.colorbar(cont_sig, ax=axs.flat[-1])
+    # fig.colorbar(cont_bg, ax=axs.flat[-1])
+    # fig.colorbar(cont_sig, ax=axs.flat[-1])
         
     for a in axs.flat: a.set_xticks(a.get_xticks()[::2])
     if axs.size > latent_dim_n/2:

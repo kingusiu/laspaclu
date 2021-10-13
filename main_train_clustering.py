@@ -61,8 +61,8 @@ else:
     cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
 
 # save
+print('>>> saving classic clustering model to ' + model_path)
 jli.dump(cluster_model, model_path+'.joblib') 
-
 
 
 #****************************************#
