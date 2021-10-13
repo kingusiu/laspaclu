@@ -7,6 +7,7 @@ import numpy as np
 from collections import namedtuple
 from sklearn import svm
 import joblib as jli
+import pathlib
 
 import data.data_sample as dasa
 import inference.predict_autoencoder as pred
@@ -20,13 +21,14 @@ import pofah.path_constants.sample_dict_file_parts_input as sdi
 
 
 
-
 #****************************************#
 #           Runtime Params
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run read_n sample_id_qcd sample_id_sig cluster_alg')
-params = Parameters(run=10, read_n=int(1e4), sample_id_qcd='qcdSideExt', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
+params = Parameters(run=10, read_n=int(1e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
+fig_dir = 'fig/run_'+str(run)
+pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 
 #****************************************#
@@ -84,14 +86,14 @@ latent_coords_qcd = pred.map_to_latent_space(data_sample=np.vstack([p1_qcd, p2_q
 latent_coords_sig = pred.map_to_latent_space(data_sample=np.vstack([p1_sig, p2_sig]), model=ae_model, read_n=params.read_n)
 
 # plot latent space
-plot.plot_latent_space_1D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), filename_suffix='_'.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), fig_dir='fig')
-plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), filename_suffix='_'.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), fig_dir='fig')
+plot.plot_latent_space_1D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), filename_suffix='_'.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), fig_dir=fig_dir)
+plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), filename_suffix='_'.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), fig_dir=fig_dir)
 
 # apply classic clustering algo
 cluster_assign_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of signal obtained from AE
 cluster_assign_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
-plot.plot_clusters(latent_coords_sig, cluster_assign_sig, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_sig, filename_suffix=params.cluster_alg+'_'+params.sample_id_sig)
-plot.plot_clusters(latent_coords_qcd, cluster_assign_qcd, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_qcd, filename_suffix=params.cluster_alg+'_'+params.sample_id_qcd)
+plot.plot_clusters(latent_coords_qcd, cluster_assign_qcd, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_qcd, filename_suffix=params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
+plot.plot_clusters(latent_coords_sig, cluster_assign_sig, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_sig, filename_suffix=params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
 
 
 
@@ -125,8 +127,8 @@ with open(model_path_qm, 'rb') as f:
 cluster_q_assign_qcd, q_dist_qcd = cluster_q.assign_clusters(latent_coords_qcd, cluster_q_centers) # latent coords of qcd train obtained from AE
 cluster_q_assign_sig, q_dist_sig = cluster_q.assign_clusters(latent_coords_sig, cluster_q_centers) # latent coords of signal obtained from AE
 
-plot.plot_clusters(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+params.sample_id_qcd, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_qcd)
-plot.plot_clusters(latent_coords_sig, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+params.sample_id_sig, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_sig)
+plot.plot_clusters(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+params.sample_id_qcd, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
+plot.plot_clusters(latent_coords_sig, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+params.sample_id_sig, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
 
 dist_q_qcd = metr.compute_quantum_metric_score(q_dist_qcd, cluster_q_assign_qcd)
 dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
@@ -136,10 +138,10 @@ dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 #               ANALYSIS
 #****************************************#
 
-pu.plot_bg_vs_sig([dist_qcd, dist_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
+pu.plot_bg_vs_sig([dist_qcd, dist_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, ylogscale=True, fig_format='.png')
 title = 'quantum ' + title
-pu.plot_bg_vs_sig([dist_q_qcd, dist_q_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir='fig', ylogscale=True, fig_format='.png')
-roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], title=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir='fig')
+pu.plot_bg_vs_sig([dist_q_qcd, dist_q_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, ylogscale=True, fig_format='.png')
+roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], title=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir)
 
 #****************************************#
 #               WRITE RESULTS
