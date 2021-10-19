@@ -17,8 +17,8 @@ import util.persistence as pers
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', 'read_n sample_id_train cluster_alg')
-params = Parameters(read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans')
+Parameters = namedtuple('Parameters', ' run_n read_n sample_id_train cluster_alg')
+params = Parameters(run_n=11, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans')
 
 
 #****************************************#

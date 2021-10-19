@@ -20,6 +20,12 @@ import anpofah.model_analysis.roc_analysis as roc
 import pofah.path_constants.sample_dict_file_parts_input as sdi
 import pofah.util.event_sample as evsa
 import pofah.jet_sample as jesa
+import dadrah.selection.loss_strategy as losa
+import pofah.util.sample_factory as safa
+
+def combine_loss_min(loss):
+    loss_j1, loss_j2 = np.split(loss, 2)
+    return np.minimum(loss_j1, loss_j2)
 
 
 #****************************************#
@@ -28,10 +34,10 @@ import pofah.jet_sample as jesa
 
 mG = 3500
 Parameters = namedtuple('Parameters', 'run read_n sample_id_qcd sample_id_sig cluster_alg')
-params = Parameters(run=10, read_n=int(1e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
-fig_dir = 'fig/run_'+str(run)
+params = Parameters(run=10, read_n=int(5e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
+fig_dir = 'fig/run_'+str(params.run)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
-
+print('*'*50+'\n'+'prediction run '+str(params.run)+' on '+str(params.read_n)+' samples'+'\n'+'*'*50)
 
 #****************************************#
 #           load Autoencoder
@@ -78,9 +84,9 @@ else:
 
 # read samples
 paths = safa.SamplePathDirFactory(sdi.path_dict)
-sample_qcd = evsa.EventSample.from_input_dir(name=params.sample_id_qcd, path=paths.sample_dir_path(params.sample_id_qcd), read_n=read_n)
+sample_qcd = evsa.EventSample.from_input_dir(name=params.sample_id_qcd, path=paths.sample_dir_path(params.sample_id_qcd), read_n=params.read_n)
 p1_qcd, p2_qcd = sample_qcd.get_particles() 
-sample_sig = evsa.EventSample.from_input_dir(name=params.sample_id_sig, path=paths.sample_dir_path(params.sample_id_sig), read_n=read_n)
+sample_sig = evsa.EventSample.from_input_dir(name=params.sample_id_sig, path=paths.sample_dir_path(params.sample_id_sig), read_n=params.read_n)
 p1_sig, p2_sig = sample_sig.get_particles() 
 
 # apply AE model
@@ -141,19 +147,21 @@ dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 #               WRITE RESULTS
 #****************************************#
 
-output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(run)
+output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run)
 pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
+print('[main_predict_clustering] >>> writing results to ' + output_dir)
 
 # qcd results
 sample_qcd_out = jesa.JetSample.from_event_sample(sample_qcd)
-sample_qcd_out.add_feature('classic_loss', dist_qcd)
-sample_qcd_out.add_feature('quantum_loss', dist_q_qcd)
-sample_qcd_out.dump(output_dir)
+sample_qcd_out.add_feature('classic_loss', combine_loss_min(dist_qcd))
+sample_qcd_out.add_feature('quantum_loss', combine_loss_min(dist_q_qcd))
+sample_qcd_out.dump(os.path.join(output_dir, sample_qcd_out.name+'.h5'))
 # signal results
 sample_sig_out = jesa.JetSample.from_event_sample(sample_sig)
-sample_sig_out.add_feature('classic_loss', dist_sig)
-sample_sig_out.add_feature('quantum_loss', dist_q_sig)
-sample_sig_out.dump(output_dir)
+sample_sig_out.add_feature('classic_loss', combine_loss_min(dist_sig))
+sample_sig_out.add_feature('quantum_loss', combine_loss_min(dist_q_sig))
+sample_sig_out.dump(os.path.join(output_dir, sample_sig_out.name+'.h5'))
+
 
 #****************************************#
 #               ANALYSIS
@@ -163,4 +171,9 @@ pu.plot_bg_vs_sig([dist_qcd, dist_sig], legend=[params.sample_id_qcd, params.sam
 title = 'quantum ' + title
 pu.plot_bg_vs_sig([dist_q_qcd, dist_q_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, ylogscale=True, fig_format='.png')
 roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], title=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir)
-# todo: plot binned ROC
+# binned roc
+loss_dict = {
+    'classic' : losa.LossStrategy(loss_fun=(lambda x : x['classic_loss']), title_str='classic kmeans', file_str='classic_kmeans'),
+    'quantum' : losa.LossStrategy(loss_fun=(lambda x : x['quantum_loss']), title_str='quantum kmeans', file_str='quantum_kmeans')
+    }
+roc.plot_binned_ROC_loss_strategy(sample_qcd_out, sample_sig_out, mass_center=mG, strategy_ids=loss_dict.keys(), loss_dict=loss_dict, fig_dir=fig_dir)
