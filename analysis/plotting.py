@@ -66,13 +66,14 @@ def plot_latent_space_2D(latent_coords, title_suffix="data", filename_suffix="da
     plt.close(fig)
 
 
-def plot_latent_space_1D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig'):
+def plot_latent_space_1D_bg_vs_sig(latent_bg, latent_sig, sample_names, fig_dir='fig'):
     
-    subtitles = ['dim ' + str(d+1) for d in range(latent_bg.shape[1])]
-    suptitle = ' '.join(['latent space distributions', title_suffix])
-    plot_name = '_'.join(['latent_space_1D_hist', filename_suffix])
+    feature_names = [r'$z_' + str(d+1) +'$' for d in range(latent_bg.shape[1])]
+    plot_name_suffix = '_'.join([s for s in sample_names])
+    suptitle = 'latent space distributions BG vs SIG'
+    plot_name = '_'.join(['latent_space_1D_hist', plot_name_suffix])
 
-    plut.plot_bg_vs_sig_multihist(list(latent_bg.T), list(latent_sig.T), subtitles=subtitles, suptitle=suptitle, plot_name=plot_name)
+    plut.plot_m_features_for_n_samples([latent_bg.T, latent_sig.T], feature_names, sample_names, plot_name=plot_name, fig_dir=fig_dir, fig_size=(12,12), bg_name='qcd')
 
 
 def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig', contour_labels=False):

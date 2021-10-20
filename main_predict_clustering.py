@@ -22,6 +22,8 @@ import pofah.util.event_sample as evsa
 import pofah.jet_sample as jesa
 import dadrah.selection.loss_strategy as losa
 import pofah.util.sample_factory as safa
+import util.preprocessing as prep
+
 
 def combine_loss_min(loss):
     loss_j1, loss_j2 = np.split(loss, 2)
@@ -33,8 +35,8 @@ def combine_loss_min(loss):
 #****************************************#
 
 mG = 3500
-Parameters = namedtuple('Parameters', 'run read_n sample_id_qcd sample_id_sig cluster_alg')
-params = Parameters(run=10, read_n=int(5e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans')
+Parameters = namedtuple('Parameters', 'run read_n sample_id_qcd sample_id_sig cluster_alg normalize')
+params = Parameters(run=11, read_n=int(5e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans', normalize=True)
 fig_dir = 'fig/run_'+str(params.run)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 print('*'*50+'\n'+'prediction run '+str(params.run)+' on '+str(params.read_n)+' samples'+'\n'+'*'*50)
@@ -58,7 +60,7 @@ ae_model = tf.saved_model.load(model_path_ae)
 
 if params.cluster_alg == 'kmeans':
 
-    model_path_km = pers.make_model_path(date='20211006', prefix='KM')
+    model_path_km = pers.make_model_path(date='20211019', prefix='KM', run_n=11)
     print('[main_predict_clustering] >>> loading clustering model ' + model_path_km)
 
     cluster_model = jli.load(model_path_km+'.joblib')    
@@ -92,9 +94,13 @@ p1_sig, p2_sig = sample_sig.get_particles()
 # apply AE model
 latent_coords_qcd = pred.map_to_latent_space(data_sample=np.vstack([p1_qcd, p2_qcd]), model=ae_model, read_n=params.read_n)
 latent_coords_sig = pred.map_to_latent_space(data_sample=np.vstack([p1_sig, p2_sig]), model=ae_model, read_n=params.read_n)
+if params.normalize:
+    latent_coords_qcd = prep.min_max_normalize(latent_coords_qcd)
+    latent_coords_sig = prep.min_max_normalize(latent_coords_sig)
+
 
 # plot latent space
-plot.plot_latent_space_1D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), filename_suffix='_'.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), fig_dir=fig_dir)
+plot.plot_latent_space_1D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, sample_names= [params.sample_id_qcd, params.sample_id_sig], fig_dir=fig_dir)
 plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), filename_suffix='_'.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), fig_dir=fig_dir)
 
 # apply classic clustering algo
@@ -113,7 +119,7 @@ dist_qcd = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_
 dist_sig = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_sig, model=cluster_model)
 
 if params.cluster_alg == 'kmeans':
-    xlabel = 'distance to closest cluster'
+    xlabel = 'sum distances to clusters'
     title = 'euclidian distance distribution qcd vs sig'
 else:
     xlabel = 'distance to border'
@@ -126,7 +132,7 @@ else:
 #****************************************#
 
 print('[main_predict_clustering] >>> loading qmeans')
-model_path_qm = pers.make_model_path(date='20211006', prefix='QM') + '.npy'
+model_path_qm = pers.make_model_path(date='20211020', prefix='QM', run_n=11) + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f)
 
@@ -167,9 +173,15 @@ sample_sig_out.dump(os.path.join(output_dir, sample_sig_out.name+'.h5'))
 #               ANALYSIS
 #****************************************#
 
-pu.plot_bg_vs_sig([dist_qcd, dist_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, ylogscale=True, fig_format='.png')
-title = 'quantum ' + title
-pu.plot_bg_vs_sig([dist_q_qcd, dist_q_sig], legend=[params.sample_id_qcd, params.sample_id_sig], xlabel=xlabel, title=title, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, ylogscale=True, fig_format='.png')
+# plot classic distances
+pu.plot_feature_for_n_samples([dist_qcd, dist_sig], sample_names=[params.sample_id_qcd, params.sample_id_sig], \
+    xlabel=xlabel, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
+
+# plot quantum distances
+pu.plot_feature_for_n_samples([dist_q_qcd, dist_q_sig], sample_names=[params.sample_id_qcd, params.sample_id_sig], \
+    xlabel='quantum '+xlabel, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
+
+# inclusive roc
 roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], title=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir)
 # binned roc
 loss_dict = {

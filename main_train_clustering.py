@@ -10,6 +10,7 @@ import inference.clustering_quantum as cluster_q
 import inference.predict_autoencoder as pred
 import data.data_sample as dasa
 import util.persistence as pers
+import util.preprocessing as prep
 
 
 
@@ -17,8 +18,8 @@ import util.persistence as pers
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', ' run_n read_n sample_id_train cluster_alg')
-params = Parameters(run_n=11, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans')
+Parameters = namedtuple('Parameters', ' run_n read_n sample_id_train cluster_alg normalize')
+params = Parameters(run_n=11, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans', normalize=True)
 
 
 #****************************************#
@@ -33,7 +34,8 @@ ae_model = tf.saved_model.load(model_path_ae)
 
 # apply AE model
 latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, model=ae_model, read_n=params.read_n)
-
+if params.normalize:
+    latent_coords_qcd = prep.min_max_normalize(latent_coords_qcd)
 
 #****************************************#
 #               CLUSTERING CLASSIC
@@ -44,7 +46,7 @@ latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, model=ae_m
 
 if params.cluster_alg == 'kmeans':
 
-    model_path = pers.make_model_path(prefix='KM')
+    model_path = pers.make_model_path(prefix='KM', run_n=params.run_n)
 
     print('>>> training kmeans')
     cluster_model = cluster.train_kmeans(latent_coords_qcd)
@@ -55,7 +57,7 @@ if params.cluster_alg == 'kmeans':
 
 else:
 
-    model_path = pers.make_model_path(prefix='SVM')
+    model_path = pers.make_model_path(prefix='SVM', run_n=params.run_n)
 
     print('>>> training one class svm')
     cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
@@ -74,7 +76,7 @@ jli.dump(cluster_model, model_path+'.joblib')
 print('>>> training qmeans')
 cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd)
 
-model_path_qm = pers.make_model_path(prefix='QM') + '.npy'
+model_path_qm = pers.make_model_path(prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'wb') as f:
     print('>>> saving qmeans model to ' + model_path_qm)
     np.save(f, cluster_q_centers)

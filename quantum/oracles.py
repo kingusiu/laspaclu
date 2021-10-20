@@ -47,7 +47,7 @@ def create_oracle_lincombi(threshold, dist_arr, oracles):
     '''create linear combi of oracles for a given threshold '''
     
     # create delta-coefficients for linear combi sum_a delta(y - a) * O_a
-    idx, = np.where(dist_arr==threshold) # assuming distinct values
+    idx = np.where(dist_arr==threshold)[0][0] # taking first match if equal distances present
     delta_coeff = signal.unit_impulse(len(dist_arr), idx)
     
     oracle_sum = delta_coeff[0] * oracles[0]
@@ -58,7 +58,8 @@ def create_oracle_lincombi(threshold, dist_arr, oracles):
     
     # create a quantum circuit on nn qubits
     qc = QuantumCircuit(nn, name='combi_oracle')
-        
+    
+    # import ipdb; ipdb.set_trace()    
     # convert oracle_matrix into an operator, and add it to the quantum circuit
     qc.unitary(oracle_sum, range(nn))
     
