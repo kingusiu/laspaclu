@@ -65,6 +65,7 @@ if params.cluster_alg == 'kmeans':
 
     cluster_model = jli.load(model_path_km+'.joblib')    
     cluster_centers = cluster_model.cluster_centers_
+    print('classic cluster centers: ' + cluster_centers)
 
 
 #****************************************#
@@ -95,8 +96,7 @@ p1_sig, p2_sig = sample_sig.get_particles()
 latent_coords_qcd = pred.map_to_latent_space(data_sample=np.vstack([p1_qcd, p2_qcd]), model=ae_model, read_n=params.read_n)
 latent_coords_sig = pred.map_to_latent_space(data_sample=np.vstack([p1_sig, p2_sig]), model=ae_model, read_n=params.read_n)
 if params.normalize:
-    latent_coords_qcd = prep.min_max_normalize(latent_coords_qcd)
-    latent_coords_sig = prep.min_max_normalize(latent_coords_sig)
+    latent_coords_qcd, latent_coords_sig = prep.min_max_normalize_all_data(latent_coords_qcd, latent_coords_sig)
 
 
 # plot latent space
@@ -135,6 +135,7 @@ print('[main_predict_clustering] >>> loading qmeans')
 model_path_qm = pers.make_model_path(date='20211020', prefix='QM', run_n=11) + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f)
+print('quantum cluster centers: ' + cluster_q_centers)
 
 
 # apply clustering algo
