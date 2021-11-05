@@ -19,7 +19,7 @@ import util.preprocessing as prep
 #****************************************#
 
 Parameters = namedtuple('Parameters', ' run_n read_n sample_id_train cluster_alg normalize')
-params = Parameters(run_n=11, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans', normalize=True)
+params = Parameters(run_n=12, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans', normalize=False)
 
 
 #****************************************#
@@ -50,6 +50,8 @@ if params.cluster_alg == 'kmeans':
 
     print('>>> training kmeans')
     cluster_model = cluster.train_kmeans(latent_coords_qcd)
+    print('[main_train_clustering] >>> centers {}'.format(cluster_model.cluster_centers_))
+
     
 
 #****************************************#

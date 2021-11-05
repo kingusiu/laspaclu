@@ -4,6 +4,7 @@ import numpy as np
 from qiskit import Aer, IBMQ, execute, assemble, transpile
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
 
+shots_n = 1000
 
 def normalize(v):
     return v / np.linalg.norm(v)
@@ -93,14 +94,14 @@ def overlap_circuit(a, b) -> QuantumCircuit:
 
 def run_circuit(qc):
     simulator = Aer.get_backend('qasm_simulator')
-    return execute(qc, backend=simulator, shots=1000).result().get_counts(qc)
+    return execute(qc, backend=simulator, shots=shots_n).result().get_counts(qc)
 
 
 def calc_overlap(answer, state='0'):
     ''' calculate overlap from experiment measurements '''
 
     shots = answer[state] if len(answer) == 1 else answer['0']+answer['1']
-    return np.abs(answer[state]/1000 - 0.5)*2
+    return np.abs(answer[state]/shots_n - 0.5)*2
 
 
 def calc_dist(answer, z, state='0'):

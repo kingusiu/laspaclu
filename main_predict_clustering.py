@@ -65,7 +65,8 @@ if params.cluster_alg == 'kmeans':
 
     cluster_model = jli.load(model_path_km+'.joblib')    
     cluster_centers = cluster_model.cluster_centers_
-    print('classic cluster centers: ' + cluster_centers)
+    print('classic cluster centers: ')
+    print(cluster_centers)
 
 
 #****************************************#
@@ -135,7 +136,8 @@ print('[main_predict_clustering] >>> loading qmeans')
 model_path_qm = pers.make_model_path(date='20211020', prefix='QM', run_n=11) + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f)
-print('quantum cluster centers: ' + cluster_q_centers)
+print('quantum cluster centers: ')
+print(cluster_q_centers)
 
 
 # apply clustering algo

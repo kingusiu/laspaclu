@@ -11,7 +11,7 @@ class ParticleAutoencoder(tf.keras.Model):
         Particle conv1D Autoencoder inheriting form keras.Model
     '''
 
-    def __init__(self, input_shape=(100,3), latent_dim=6, x_mean_stdev=(0,1), kernel_n=16, kernel_sz=3, activation='elu', **kwargs):
+    def __init__(self, input_shape=(100,3), latent_dim=6, x_mean_stdev=(0,1), kernel_n=16, kernel_sz=3, activation='elu', activation_latent=tf.keras.activations.linear,**kwargs):
         super(ParticleAutoencoder, self).__init__(**kwargs)
         self._input_shape = input_shape
         self.latent_dim = latent_dim
@@ -53,7 +53,7 @@ class ParticleAutoencoder(tf.keras.Model):
 
         # *****************************
         #         latent space
-        z = tf.keras.layers.Dense(self.latent_dim, name='z')(x)
+        z = tf.keras.layers.Dense(self.latent_dim, activation=activation_latent, name='z')(x)
 
         # instantiate encoder model
         encoder = tf.keras.Model(name='encoder', inputs=inputs, outputs=z)
