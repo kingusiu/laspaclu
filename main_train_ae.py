@@ -7,8 +7,8 @@ from collections import namedtuple
 from matplotlib import pyplot as plt
 import numpy as np
 
+import data.data_sample as dasa
 import util.persistence as pers
-import inference.train_autoencoder as train
 import models.autoencoder as auen
 import anpofah.sample_analysis.sample_converter as saco
 import pofah.util.utility_fun as utfu
@@ -58,7 +58,7 @@ def train(data_sample, input_shape=(100,3), latent_dim=6, epochs=10, read_n=int(
 do_clustering = True
 
 Parameters = namedtuple('Parameters', 'run_n epochs latent_dim read_n sample_id_train cluster_alg act_latent')
-params = Parameters(run_n=50, epochs=200, latent_dim=8, read_n=int(1e3), sample_id_train='qcdSide', cluster_alg='kmeans', act_latent=tf.keras.activations.tanh)
+params = Parameters(run_n=50, epochs=200, latent_dim=8, read_n=int(1e6), sample_id_train='qcdSide', cluster_alg='kmeans', act_latent=tf.keras.activations.tanh)
 
 model_path = pers.make_model_path(run_n=params.run_n, prefix='AE', mkdir=True)
 data_sample = dasa.DataSample(params.sample_id_train)

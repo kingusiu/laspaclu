@@ -18,6 +18,7 @@ class ParticleAutoencoder(tf.keras.Model):
         self.kernel_n = kernel_n
         self.kernel_sz = kernel_sz
         self.activation = activation
+        self.activation_latent = activation_latent
         self.initializer = 'he_uniform'
         self.kernel_1D_sz = 3
         self.x_mean_stdev = x_mean_stdev
@@ -53,7 +54,7 @@ class ParticleAutoencoder(tf.keras.Model):
 
         # *****************************
         #         latent space
-        z = tf.keras.layers.Dense(self.latent_dim, activation=activation_latent, name='z')(x)
+        z = tf.keras.layers.Dense(self.latent_dim, activation=self.activation_latent, name='z')(x)
 
         # instantiate encoder model
         encoder = tf.keras.Model(name='encoder', inputs=inputs, outputs=z)
