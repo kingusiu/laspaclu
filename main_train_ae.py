@@ -68,7 +68,7 @@ data_sample = dasa.DataSample(params.sample_id_train)
 #****************************************#
 
 # train AE model
-print('>>> training autoencoder')
+print('>>> training autoencoder run ' + str(params.run_n))
 ae_model = train(data_sample, epochs=params.epochs, latent_dim=params.latent_dim, read_n=params.read_n, act_latent=params.act_latent)
 
 # model save

@@ -1,10 +1,17 @@
 import setGPU
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import tensorflow as tf
+import numpy as np
 from collections import namedtuple
+import pathlib
 
 import pofah.jet_sample as jesa
+import pofah.util.sample_factory as safa
 import pofah.path_constants.sample_dict_file_parts_input as sdi
+import util.persistence as pers
+import pofah.util.event_sample as evsa
+import inference.predict_autoencoder as pred
 
 
 """
@@ -17,13 +24,13 @@ import pofah.path_constants.sample_dict_file_parts_input as sdi
 #           Runtime Params
 #****************************************#
 
-sample_ids = ['qcdSide', 'GtoWW35na']
+sample_ids = ['qcdSide', 'qcdSig', 'GtoWW35na']
 
 Parameters = namedtuple('Parameters', ' run_n read_n')
-params = Parameters(run_n=50, read_n=int(1e6))
+params = Parameters(run_n=50, read_n=int(1e4))
 
 paths = safa.SamplePathDirFactory(sdi.path_dict)
-output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.run)
+output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.run_n)
 pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 
@@ -44,16 +51,17 @@ for sample_id in sample_ids:
     #           Read Data
     #****************************************#
 
-    sample = evsa.EventSample.from_input_dir(name=sample_id, path=paths.sample_dir_path(sample_id_qcd), read_n=params.read_n)
-    p1_qcd, p2_qcd = sample.get_particles() 
+    sample = evsa.EventSample.from_input_dir(name=sample_id, path=paths.sample_dir_path(sample_id), read_n=params.read_n)
+    p1, p2 = sample.get_particles() 
 
 
     #****************************************#
-    #           Load Autoencoder
+    #           Apply Autoencoder
     #****************************************#
 
-    latent_coords_qcd = pred.map_to_latent_space(data_sample=np.vstack([p1_qcd, p2_qcd]), model=ae_model, read_n=params.read_n)
-
+    latent_coords = pred.map_to_latent_space(data_sample=np.vstack([p1, p2]), model=ae_model, read_n=params.read_n)
+    latent_j1, latent_j2 = np.split(latent_coords, 2)
+    latent_coords = np.stack([latent_j1,latent_j2], axis=1)
 
     #****************************************#
     #           Write results to list
@@ -61,8 +69,8 @@ for sample_id in sample_ids:
 
     print('[main_predict_ae] >>> writing results for ' + sample_id + 'to ' + output_dir)
 
-    # qcd results
+    # latent results
     sample_out = jesa.JetSampleLatent.from_event_sample(sample)
-    sample_out.add_latent_prepresentation(latent_coords_qcd)
+    sample_out.add_latent_representation(latent_coords)
     sample_out.dump(os.path.join(output_dir, sample_out.name+'.h5'))
 
