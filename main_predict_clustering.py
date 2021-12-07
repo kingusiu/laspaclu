@@ -36,7 +36,7 @@ def combine_loss_min(loss):
 
 mG = 3500
 Parameters = namedtuple('Parameters', 'run read_n sample_id_qcd sample_id_sig cluster_alg normalize')
-params = Parameters(run=11, read_n=int(5e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans', normalize=True)
+params = Parameters(run=12, read_n=int(5e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans', normalize=True)
 fig_dir = 'fig/run_'+str(params.run)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 print('*'*50+'\n'+'prediction run '+str(params.run)+' on '+str(params.read_n)+' samples'+'\n'+'*'*50)

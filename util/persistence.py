@@ -12,3 +12,18 @@ def make_model_path(date=None, prefix='AE', run_n=0, mkdir=False):
     if mkdir:
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     return path
+
+
+def read_latent_representation(input_dir, sample_id, normalize=False):
+
+    file_name = os.path.join(input_dir, sample_id+'.h5')
+    print('>>> reading ' + file_name)
+    sample = jesa.JetSampleLatent.from_input_file(name=sample_id, path=file_name)
+    l1, l2 = sample_qcd.get_latent_representation()
+
+    latent_coords = np.vstack([l1, l2])
+    np.random.shuffle(latent_coords)
+    if normalize:
+        latent_coords = prep.min_max_normalize(latent_coords)
+
+    return latent_coords
