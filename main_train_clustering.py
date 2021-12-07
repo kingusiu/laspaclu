@@ -1,3 +1,4 @@
+import setGPU
 from collections import namedtuple
 import numpy as np
 import os
@@ -5,6 +6,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 import joblib as jli
 
+import pofah.jet_sample as jesa
 import inference.clustering_classic as cluster
 import inference.clustering_quantum as cluster_q
 import inference.predict_autoencoder as pred
@@ -18,27 +20,28 @@ import util.preprocessing as prep
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', ' run_n read_n sample_id_train cluster_alg normalize')
-params = Parameters(run_n=12, read_n=int(1e4), sample_id_train='qcdSide', cluster_alg='kmeans', normalize=False)
+Parameters = namedtuple('Parameters', ' run_n ae_run_n read_n sample_id_train cluster_alg normalize')
+params = Parameters(run_n=12, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSide', cluster_alg='kmeans', normalize=False)
 
 
 #****************************************#
-#           Data Sample -> AE -> latent
+#      load data latent representation
 #****************************************#
 
-data_sample = dasa.DataSample(params.sample_id_train)
-model_path_ae = pers.make_model_path(date='20211004', prefix='AE')
+input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
 
-print('[main] >>> loading autoencoder ' + model_path_ae)
-ae_model = tf.saved_model.load(model_path_ae)
+file_name = os.path.join(input_dir, params.sample_id_train+'.h5')
+print('>>> reading ' + file_name)
+sample_qcd = jesa.JetSampleLatent.from_input_file(name=params.sample_id_train, path=file_name)
+l1, l2 = sample_qcd.get_latent_representation()
 
-# apply AE model
-latent_coords_qcd = pred.map_to_latent_space(data_sample=data_sample, model=ae_model, read_n=params.read_n)
+latent_coords_qcd = np.vstack([l1, l2])
+np.random.shuffle(latent_coords_qcd)
 if params.normalize:
     latent_coords_qcd = prep.min_max_normalize(latent_coords_qcd)
 
 #****************************************#
-#               CLUSTERING CLASSIC
+#          CLUSTERING CLASSIC
 #****************************************#
 
 #****************************************#
@@ -70,7 +73,7 @@ jli.dump(cluster_model, model_path+'.joblib')
 
 
 #****************************************#
-#               QUANTUM CLUSTERING
+#            QUANTUM CLUSTERING
 #****************************************#
 
 ## train quantum kmeans

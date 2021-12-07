@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pandas as pd
+import pathlib
 from collections import namedtuple
 import seaborn as sns
 import mplhep as hep
@@ -50,10 +51,13 @@ df_l2_sig['sample_id'] = sample_id_sig
 #****************************************#
 
 sns.set_style(hep.style.CMS)
+fig_dir = 'fig/ae_run'+str(params.run_n)
+pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 plot1 = sns.pairplot(df_l1_qcd.append(df_l1_sig, ignore_index=True), hue='sample_id', kind='kde')
-sns.move_legend(plot1, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=len(data), labelspacing=0.8, fontsize=16, title='Samples')
-plot1.savefig('fig/ae_run'+str(params.run_n)+'latent_pair_scatter_'+sample_id_qcd+'_vs_'+sample_id_sig+'_j1.png')
+# plot1.map_upper(cluster_centers) # -> add cluster centers 
+sns.move_legend(plot1, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=2, labelspacing=0.8, fontsize=16, title='Samples')
+plot1.savefig(fig_dir+'/latent_pair_scatter_'+sample_id_qcd+'_vs_'+sample_id_sig+'_j1.png')
 plot2 = sns.pairplot(df_l2_qcd.append(df_l2_sig, ignore_index=True), hue='sample_id', kind='kde')
-sns.move_legend(plot1, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=len(data), labelspacing=0.8, fontsize=16, title='Samples')
-plot2.savefig('fig/ae_run'+str(params.run_n)+'latent_pair_scatter_'+sample_id_qcd+'_vs_'+sample_id_sig+'_j2.png')
+sns.move_legend(plot1, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=2, labelspacing=0.8, fontsize=16, title='Samples')
+plot2.savefig('fig/ae_run'+str(params.run_n)+'/latent_pair_scatter_'+sample_id_qcd+'_vs_'+sample_id_sig+'_j2.png')

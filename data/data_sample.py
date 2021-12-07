@@ -62,7 +62,9 @@ class DataSample():
 
 
     def get_dataset_for_inference(self, read_n=None, batch_sz=256):
-        """ batched dataset """
+        """ 
+            returns batched dataset of stacked J1 & J2 samples (single-jet input)
+        """
         
         jets = self.read_particles_dijet(self.sample_id, read_n)
         return tf.data.Dataset.from_tensor_slices(jets).batch(batch_sz)
