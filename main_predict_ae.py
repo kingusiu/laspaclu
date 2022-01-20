@@ -24,10 +24,10 @@ import inference.predict_autoencoder as pred
 #           Runtime Params
 #****************************************#
 
-sample_ids = ['qcdSide', 'qcdSig', 'GtoWW35na']
+sample_ids = ['qcdSide', 'qcdSideExt', 'qcdSig', 'qcdSigExt', 'GtoWW35na']
 
 Parameters = namedtuple('Parameters', ' run_n read_n')
-params = Parameters(run_n=50, read_n=int(1e4))
+params = Parameters(run_n=50, read_n=int(1e6))
 
 paths = safa.SamplePathDirFactory(sdi.path_dict)
 output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.run_n)
@@ -39,7 +39,7 @@ pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 #****************************************#
 
 # load model
-model_path_ae = pers.make_model_path(run_n=50, date='20211110', prefix='AE')
+model_path_ae = pers.make_model_path(run_n=params.run_n, date='20211110', prefix='AE')
 
 print('[main_predict_ae] >>> loading autoencoder ' + model_path_ae)
 ae_model = tf.saved_model.load(model_path_ae)

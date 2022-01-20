@@ -1,4 +1,4 @@
-import setGPU
+#import setGPU
 from collections import namedtuple
 import numpy as np
 import os
@@ -20,8 +20,8 @@ import util.preprocessing as prep
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', ' run_n ae_run_n read_n sample_id_train cluster_alg normalize')
-params = Parameters(run_n=12, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSide', cluster_alg='kmeans', normalize=False)
+Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize')
+params = Parameters(run_n=14, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False)
 
 
 #****************************************#
@@ -29,16 +29,9 @@ params = Parameters(run_n=12, ae_run_n=50, read_n=int(1e3), sample_id_train='qcd
 #****************************************#
 
 input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
+sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_train) 
+latent_coords_qcd = pers.read_latent_representation(sample_qcd)
 
-file_name = os.path.join(input_dir, params.sample_id_train+'.h5')
-print('>>> reading ' + file_name)
-sample_qcd = jesa.JetSampleLatent.from_input_file(name=params.sample_id_train, path=file_name)
-l1, l2 = sample_qcd.get_latent_representation()
-
-latent_coords_qcd = np.vstack([l1, l2])
-np.random.shuffle(latent_coords_qcd)
-if params.normalize:
-    latent_coords_qcd = prep.min_max_normalize(latent_coords_qcd)
 
 #****************************************#
 #          CLUSTERING CLASSIC

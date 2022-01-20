@@ -28,7 +28,7 @@ def get_indices_to_mark(dist_arr, threshold):
 def create_threshold_oracle_set(dist_arr):
     
     ''' 
-    create linear combination of oracles sum(oracle_t)
+    create set of threshold oracles {O_1, ..., O_m} for m possible thresholds
     where oracle_t marks all indices i for which f(i) < threshold t
     '''
     
@@ -44,7 +44,7 @@ def create_threshold_oracle_set(dist_arr):
 
 def create_oracle_lincombi(threshold, dist_arr, oracles):
     
-    '''create linear combi of oracles for a given threshold '''
+    ''' join oracles from oracle set with delta function for a given threshold (pick oracles to use)'''
     
     # create delta-coefficients for linear combi sum_a delta(y - a) * O_a
     idx = np.where(dist_arr==threshold)[0][0] # taking first match if equal distances present

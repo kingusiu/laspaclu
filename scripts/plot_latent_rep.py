@@ -5,6 +5,7 @@ import pathlib
 from collections import namedtuple
 import seaborn as sns
 import mplhep as hep
+import matplotlib.pyplot as plt
 
 import pofah.jet_sample as jesa
 
@@ -56,8 +57,10 @@ pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 plot1 = sns.pairplot(df_l1_qcd.append(df_l1_sig, ignore_index=True), hue='sample_id', kind='kde')
 # plot1.map_upper(cluster_centers) # -> add cluster centers 
-sns.move_legend(plot1, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=2, labelspacing=0.8, fontsize=16, title='Samples')
+sns.move_legend(plot1, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, labelspacing=0.8, fontsize=16, title='Samples')
+plt.tight_layout()
 plot1.savefig(fig_dir+'/latent_pair_scatter_'+sample_id_qcd+'_vs_'+sample_id_sig+'_j1.png')
 plot2 = sns.pairplot(df_l2_qcd.append(df_l2_sig, ignore_index=True), hue='sample_id', kind='kde')
-sns.move_legend(plot1, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=2, labelspacing=0.8, fontsize=16, title='Samples')
+sns.move_legend(plot1, bbox_to_anchor=(0.5, 0), loc="lower center", ncol=2, labelspacing=0.8, fontsize=16, title='Samples')
+plt.tight_layout()
 plot2.savefig('fig/ae_run'+str(params.run_n)+'/latent_pair_scatter_'+sample_id_qcd+'_vs_'+sample_id_sig+'_j2.png')

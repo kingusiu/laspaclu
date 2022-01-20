@@ -68,7 +68,7 @@ def train_qmeans(data, n_clusters=2):
         print('[clustering_quantum:train_qmeans] >>> iter {}: new centers {}'.format(i,new_centers))
         i = i+1
 
-        if np.allclose(new_centers, cluster_centers, rtol=1.e-3):
+        if np.allclose(new_centers, cluster_centers, rtol=1.e-2):
             break
 
         cluster_centers = new_centers

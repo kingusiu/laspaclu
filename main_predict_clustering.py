@@ -35,20 +35,11 @@ def combine_loss_min(loss):
 #****************************************#
 
 mG = 3500
-Parameters = namedtuple('Parameters', 'run read_n sample_id_qcd sample_id_sig cluster_alg normalize')
-params = Parameters(run=12, read_n=int(5e4), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans', normalize=True)
-fig_dir = 'fig/run_'+str(params.run)
+Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize')
+params = Parameters(run_n=12, ae_run_n=50, read_n=int(1e2), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans', normalize=False)
+fig_dir = 'fig/run_'+str(params.run_n)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
-print('*'*50+'\n'+'prediction run '+str(params.run)+' on '+str(params.read_n)+' samples'+'\n'+'*'*50)
-
-#****************************************#
-#           load Autoencoder
-#****************************************#
-
-model_path_ae = pers.make_model_path(date='20211004', prefix='AE')
-
-print('[main_predict_clustering] >>> loading autoencoder ' + model_path_ae)
-ae_model = tf.saved_model.load(model_path_ae)
+print('*'*50+'\n'+'prediction run '+str(params.run_n)+' on '+str(params.read_n)+' samples'+'\n'+'*'*50)
 
 
 #****************************************#
@@ -60,7 +51,7 @@ ae_model = tf.saved_model.load(model_path_ae)
 
 if params.cluster_alg == 'kmeans':
 
-    model_path_km = pers.make_model_path(date='20211019', prefix='KM', run_n=11)
+    model_path_km = pers.make_model_path(date='20211208', prefix='KM', run_n=params.run_n)
     print('[main_predict_clustering] >>> loading clustering model ' + model_path_km)
 
     cluster_model = jli.load(model_path_km+'.joblib')    
@@ -81,40 +72,39 @@ else:
     cluster_centers = None # no cluster centers for one class svm
 
 
+#****************************************#
+#      load data latent representation
+#****************************************#
 
-#******************************************#
-#    AE + CLASSIC CLUSTER ALGO ON TESTSET
-#******************************************#
-
-# read samples
-paths = safa.SamplePathDirFactory(sdi.path_dict)
-sample_qcd = evsa.EventSample.from_input_dir(name=params.sample_id_qcd, path=paths.sample_dir_path(params.sample_id_qcd), read_n=params.read_n)
-p1_qcd, p2_qcd = sample_qcd.get_particles() 
-sample_sig = evsa.EventSample.from_input_dir(name=params.sample_id_sig, path=paths.sample_dir_path(params.sample_id_sig), read_n=params.read_n)
-p1_sig, p2_sig = sample_sig.get_particles() 
-
-# apply AE model
-latent_coords_qcd = pred.map_to_latent_space(data_sample=np.vstack([p1_qcd, p2_qcd]), model=ae_model, read_n=params.read_n)
-latent_coords_sig = pred.map_to_latent_space(data_sample=np.vstack([p1_sig, p2_sig]), model=ae_model, read_n=params.read_n)
+input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
+sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_qcd) 
+latent_coords_qcd = pers.read_latent_representation(sample_qcd, shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
+sample_sig = pers.read_latent_jet_sample(input_dir, params.sample_id_sig) 
+latent_coords_sig = pers.read_latent_representation(sample_sig, shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
 if params.normalize:
     latent_coords_qcd, latent_coords_sig = prep.min_max_normalize_all_data(latent_coords_qcd, latent_coords_sig)
 
 
-# plot latent space
-plot.plot_latent_space_1D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, sample_names= [params.sample_id_qcd, params.sample_id_sig], fig_dir=fig_dir)
-plot.plot_latent_space_2D_bg_vs_sig(latent_coords_qcd, latent_coords_sig, title_suffix=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), filename_suffix='_'.join([params.sample_id_qcd, 'vs', params.sample_id_sig]), fig_dir=fig_dir)
+#****************************************#
+#           apply clustering
+#****************************************#
 
-# apply classic clustering algo
-cluster_assign_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of signal obtained from AE
+print('[main_predict_clustering] >>> applying classic clustering model')
+
+cluster_assign_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of qcd obtained from AE
 cluster_assign_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
-plot.plot_clusters(latent_coords_qcd, cluster_assign_qcd, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_qcd, filename_suffix=params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
-plot.plot_clusters(latent_coords_sig, cluster_assign_sig, cluster_centers, title_suffix=params.cluster_alg+' '+params.sample_id_sig, filename_suffix=params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
 
+print('[main_predict_clustering] >>> plotting classic cluster assignments')
+
+plot.plot_clusters_pairplot(latent_coords_qcd, cluster_assign_qcd, cluster_centers, filename_suffix=params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
+plot.plot_clusters_pairplot(latent_coords_sig, cluster_assign_sig, cluster_centers, filename_suffix=params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
 
 
 #****************************************#
 #               METRIC
 #****************************************#
+
+print('[main_predict_clustering] >>> computing classic clustering metrics')
 
 dist_qcd = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_qcd, model=cluster_model)
 dist_sig = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_sig, model=cluster_model)
@@ -133,7 +123,7 @@ else:
 #****************************************#
 
 print('[main_predict_clustering] >>> loading qmeans')
-model_path_qm = pers.make_model_path(date='20211020', prefix='QM', run_n=11) + '.npy'
+model_path_qm = pers.make_model_path(date='20211208', prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f)
 print('quantum cluster centers: ')
@@ -141,12 +131,14 @@ print(cluster_q_centers)
 
 
 # apply clustering algo
+print('[main_predict_clustering] >>> applying quantum clustering model')
 cluster_q_assign_qcd, q_dist_qcd = cluster_q.assign_clusters(latent_coords_qcd, cluster_q_centers) # latent coords of qcd train obtained from AE
 cluster_q_assign_sig, q_dist_sig = cluster_q.assign_clusters(latent_coords_sig, cluster_q_centers) # latent coords of signal obtained from AE
+print('[main_predict_clustering] >>> plotting quantum cluster assignments')
+plot.plot_clusters_pairplot(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
+plot.plot_clusters_pairplot(latent_coords_sig, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
 
-plot.plot_clusters(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+params.sample_id_qcd, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
-plot.plot_clusters(latent_coords_sig, cluster_q_assign_sig, cluster_centers, title_suffix='quantum_'+params.cluster_alg+' '+params.sample_id_sig, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
-
+print('[main_predict_clustering] >>> computing quantum clustering metrics')
 dist_q_qcd = metr.compute_quantum_metric_score(q_dist_qcd, cluster_q_assign_qcd)
 dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 
@@ -156,17 +148,17 @@ dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 #               WRITE RESULTS
 #****************************************#
 
-output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run)
+output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
 pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 print('[main_predict_clustering] >>> writing results to ' + output_dir)
 
 # qcd results
-sample_qcd_out = jesa.JetSample.from_event_sample(sample_qcd)
+sample_qcd_out = jesa.JetSample.from_latent_jet_sample(sample_qcd)
 sample_qcd_out.add_feature('classic_loss', combine_loss_min(dist_qcd))
 sample_qcd_out.add_feature('quantum_loss', combine_loss_min(dist_q_qcd))
 sample_qcd_out.dump(os.path.join(output_dir, sample_qcd_out.name+'.h5'))
 # signal results
-sample_sig_out = jesa.JetSample.from_event_sample(sample_sig)
+sample_sig_out = jesa.JetSample.from_latent_jet_sample(sample_sig)
 sample_sig_out.add_feature('classic_loss', combine_loss_min(dist_sig))
 sample_sig_out.add_feature('quantum_loss', combine_loss_min(dist_q_sig))
 sample_sig_out.dump(os.path.join(output_dir, sample_sig_out.name+'.h5'))

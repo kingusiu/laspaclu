@@ -5,6 +5,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import colors
 import matplotlib.cm as cm
+import seaborn as sns
+import mplhep as hep
+import pandas as pd
 import anpofah.util.plotting_util as plut
 
 
@@ -143,6 +146,25 @@ def plot_clusters(latent_coords, cluster_assignemnts, cluster_centers=None, titl
     plt.tight_layout()
     fig.savefig(os.path.join(fig_dir, '_'.join(filter(None, ['clustering', filename_suffix, '.png']))))
     plt.close(fig)
+
+
+def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, filename_suffix=None, fig_dir='fig'):
+
+    sns.set_style(hep.style.CMS)
+
+    df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
+    df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+
+    plot = sns.pairplot(df, hue='assign', plot_kws=dict(alpha=0.7), palette=['#872657', '#009B77', '#0C090A', '#0C090A'])
+
+    # replace labels
+    new_labels = ['assigned 1', 'assigned 2', 'center 1', 'center 2']
+    for t, l in zip(plot._legend.texts, new_labels):
+        t.set_text(l)
+
+    sns.move_legend(plot, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=4, labelspacing=0.8, fontsize=16, title='Cluster')
+    plt.tight_layout()
+    plot.savefig(fig_dir+'/cluster_assignments_'+filename_suffix+'.png')
 
 
 # not obvious to plot 6D decision boundary in 2D => currently not working!
