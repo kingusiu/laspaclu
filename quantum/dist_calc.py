@@ -64,7 +64,10 @@ def phi_circuit(a, b) -> QuantumCircuit:
 
 
 def overlap_circuit(a, b) -> QuantumCircuit:
-    ''' full overlap circuit < phi | psi > '''
+    ''' 
+        full overlap circuit < phi | psi > 
+        a,b: real inputs
+    '''
     n = len(a)
     if not ((n & (n-1) == 0) and n != 0):
         raise ValueError("size of input vectors must be power of 2 but is " + str(n))
