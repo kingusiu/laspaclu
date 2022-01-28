@@ -25,7 +25,7 @@ def quantum_distance_to_centers(sample, cluster_centers):
     return distances
 
 
-def assign_clusters(data, cluster_centers):
+def assign_clusters(data, cluster_centers, quantum_min=True):
 
     cluster_assignments = []
     distances = []
@@ -37,15 +37,15 @@ def assign_clusters(data, cluster_centers):
 
         dist = quantum_distance_to_centers(sample, cluster_centers)
 
-        # find closest cluster index (duerr & hoyer minimization)
-        closest_cluster = mini.duerr_hoyer_minimization(dist)
+        # find closest cluster index (duerr & hoyer minimization for quantum approach or numpy for classic approach)
+        closest_cluster = mini.duerr_hoyer_minimization(dist) if quantum_min else np.argmin(dist)
         cluster_assignments.append(closest_cluster)
         distances.append(dist)
 
     return np.asarray(cluster_assignments), np.asarray(distances) 
 
 
-def train_qmeans(data, n_clusters=2):
+def train_qmeans(data, n_clusters=2, quantum_min=True):
     """
         train quantum k-means 
         :param data: input array of shape [N x Z] where N .. number of samples, Z .. dimension of latent space
@@ -62,7 +62,7 @@ def train_qmeans(data, n_clusters=2):
     i = 0
     while True:
 
-        cluster_assignments, _ = assign_clusters(data, cluster_centers)
+        cluster_assignments, _ = assign_clusters(data, cluster_centers, quantum_min=quantum_min)
 
         new_centers = calc_new_cluster_centers(data, cluster_assignments)
         print('[clustering_quantum:train_qmeans] >>> iter {}: new centers {}'.format(i,new_centers))

@@ -21,7 +21,7 @@ import util.preprocessing as prep
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize')
-params = Parameters(run_n=14, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False)
+params = Parameters(run_n=15, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=False)
 
 
 #****************************************#
@@ -72,7 +72,7 @@ jli.dump(cluster_model, model_path+'.joblib')
 ## train quantum kmeans
 
 print('>>> training qmeans')
-cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd)
+cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min)
 
 model_path_qm = pers.make_model_path(prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'wb') as f:
