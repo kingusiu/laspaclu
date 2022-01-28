@@ -9,6 +9,8 @@ logging.basicConfig(
     format='%(asctime)s %(levelname)-8s [%(filename)s:%(funcName)s] %(message)s',
     level=logging.INFO,
     datefmt='%Y-%m-%d %H:%M:%S')
+logger = logging.getLogger('clustering_quantum')
+
 
 def calc_new_cluster_centers(data, cluster_assignments, n_clusters=2):
     return np.array([data[cluster_assignments == i].mean(axis=0) for i in range(n_clusters)])
@@ -71,7 +73,7 @@ def train_qmeans(data, n_clusters=2, quantum_min=True):
         cluster_assignments, _ = assign_clusters(data, cluster_centers, quantum_min=quantum_min)
 
         new_centers = calc_new_cluster_centers(data, cluster_assignments)
-        logging.info('>>> iter {}: new centers {}'.format(i,new_centers))
+        logger.info('>>> iter {}: new centers {}'.format(i,new_centers))
         i = i+1
 
         if np.allclose(new_centers, cluster_centers, rtol=1.e-2):
@@ -79,6 +81,6 @@ def train_qmeans(data, n_clusters=2, quantum_min=True):
 
         cluster_centers = new_centers
 
-    logging.info('>>> cluster centers converged')
+    logger.info('>>> cluster centers converged')
     return cluster_centers
 
