@@ -1,7 +1,14 @@
 import numpy as np
+import logging
 import quantum.dist_calc as dica
 import quantum.minimization as mini
 
+
+# logging config
+logging.basicConfig(
+    format='%(asctime)s %(levelname)-8s [%(filename)s:%(funcName)s] %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S')
 
 def calc_new_cluster_centers(data, cluster_assignments, n_clusters=2):
     return np.array([data[cluster_assignments == i].mean(axis=0) for i in range(n_clusters)])
@@ -34,7 +41,6 @@ def assign_clusters(data, cluster_centers, quantum_min=True):
     for i, sample in enumerate(data):
 
         # import ipdb; ipdb.set_trace()
-
         dist = quantum_distance_to_centers(sample, cluster_centers)
 
         # find closest cluster index (duerr & hoyer minimization for quantum approach or numpy for classic approach)
@@ -65,7 +71,7 @@ def train_qmeans(data, n_clusters=2, quantum_min=True):
         cluster_assignments, _ = assign_clusters(data, cluster_centers, quantum_min=quantum_min)
 
         new_centers = calc_new_cluster_centers(data, cluster_assignments)
-        print('[clustering_quantum:train_qmeans] >>> iter {}: new centers {}'.format(i,new_centers))
+        logging.info('>>> iter {}: new centers {}'.format(i,new_centers))
         i = i+1
 
         if np.allclose(new_centers, cluster_centers, rtol=1.e-2):
@@ -73,6 +79,6 @@ def train_qmeans(data, n_clusters=2, quantum_min=True):
 
         cluster_centers = new_centers
 
-    print('[clustering_quantum:train_qmeans] >>> cluster centers converged')
+    logging.info('>>> cluster centers converged')
     return cluster_centers
 
