@@ -5,11 +5,11 @@ import quantum.minimization as mini
 
 
 # logging config
-logging.basicConfig(
-    format='%(asctime)s %(levelname)-8s [%(filename)s:%(funcName)s] %(message)s',
-    level=logging.INFO,
-    datefmt='%Y-%m-%d %H:%M:%S')
-logger = logging.getLogger('clustering_quantum')
+logger = logging.getLogger(__name__)
+fh = logging.StreamHandler()
+fh_formatter = logging.Formatter('%(asctime)s %(levelname)-8s [%(filename)s:%(funcName)s] %(message)s')
+fh.setFormatter(fh_formatter)
+logger.addHandler(fh)
 
 
 def calc_new_cluster_centers(data, cluster_assignments, n_clusters=2):
@@ -39,6 +39,8 @@ def assign_clusters(data, cluster_centers, quantum_min=True):
     cluster_assignments = []
     distances = []
 
+    import ipdb; ipdb.set_trace()
+    
     # for each sample
     for i, sample in enumerate(data):
 
@@ -60,7 +62,6 @@ def train_qmeans(data, n_clusters=2, quantum_min=True):
         :return: np.ndarray of cluster centers
     """
 
-    #import ipdb; ipdb.set_trace()
 
     # init cluster centers randomly
     idx = np.random.choice(len(data), size=n_clusters, replace=False)
