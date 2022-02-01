@@ -39,3 +39,7 @@ def plot_clusters(latent_coords, cluster_assignments, labels=['BG', 'SIG'], clus
     else:
         plt.show()
     plt.close(fig)
+
+
+    def get_logger(name):
+        

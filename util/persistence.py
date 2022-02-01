@@ -20,7 +20,9 @@ def read_latent_representation(sample, normalize=False, shuffle=True):
 
     l1, l2 = sample.get_latent_representation()
 
+    # stack jets
     latent_coords = np.vstack([l1, l2])
+    
     if shuffle:
         np.random.shuffle(latent_coords)
     if normalize:

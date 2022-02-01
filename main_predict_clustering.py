@@ -1,4 +1,4 @@
-import setGPU
+#import setGPU
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import datetime
@@ -35,8 +35,16 @@ def combine_loss_min(loss):
 #****************************************#
 
 mG = 3500
-Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize')
-params = Parameters(run_n=12, ae_run_n=50, read_n=int(1e2), sample_id_qcd='qcdSig', sample_id_sig='GtoWW35na', cluster_alg='kmeans', normalize=False)
+Parameters = namedtuple('Parameters', 'run_n date_model ae_run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize quantum_min')
+params = Parameters(run_n=14, 
+                    date_model='20220201',
+                    ae_run_n=50, 
+                    read_n=int(1e4), 
+                    sample_id_qcd='qcdSigExt', 
+                    sample_id_sig='GtoWW35na', 
+                    cluster_alg='kmeans', 
+                    normalize=False,
+                    quantum_min=True)
 fig_dir = 'fig/run_'+str(params.run_n)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 print('*'*50+'\n'+'prediction run '+str(params.run_n)+' on '+str(params.read_n)+' samples'+'\n'+'*'*50)
@@ -51,7 +59,7 @@ print('*'*50+'\n'+'prediction run '+str(params.run_n)+' on '+str(params.read_n)+
 
 if params.cluster_alg == 'kmeans':
 
-    model_path_km = pers.make_model_path(date='20211208', prefix='KM', run_n=params.run_n)
+    model_path_km = pers.make_model_path(date=params.date_model, prefix='KM', run_n=params.run_n)
     print('[main_predict_clustering] >>> loading clustering model ' + model_path_km)
 
     cluster_model = jli.load(model_path_km+'.joblib')    
@@ -77,9 +85,9 @@ else:
 #****************************************#
 
 input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_qcd) 
+sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_qcd, read_n=params.read_n) 
 latent_coords_qcd = pers.read_latent_representation(sample_qcd, shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
-sample_sig = pers.read_latent_jet_sample(input_dir, params.sample_id_sig) 
+sample_sig = pers.read_latent_jet_sample(input_dir, params.sample_id_sig, read_n=params.read_n) 
 latent_coords_sig = pers.read_latent_representation(sample_sig, shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
 if params.normalize:
     latent_coords_qcd, latent_coords_sig = prep.min_max_normalize_all_data(latent_coords_qcd, latent_coords_sig)
@@ -123,7 +131,7 @@ else:
 #****************************************#
 
 print('[main_predict_clustering] >>> loading qmeans')
-model_path_qm = pers.make_model_path(date='20211208', prefix='QM', run_n=params.run_n) + '.npy'
+model_path_qm = pers.make_model_path(date=params.date_model, prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f)
 print('quantum cluster centers: ')
@@ -132,8 +140,8 @@ print(cluster_q_centers)
 
 # apply clustering algo
 print('[main_predict_clustering] >>> applying quantum clustering model')
-cluster_q_assign_qcd, q_dist_qcd = cluster_q.assign_clusters(latent_coords_qcd, cluster_q_centers) # latent coords of qcd train obtained from AE
-cluster_q_assign_sig, q_dist_sig = cluster_q.assign_clusters(latent_coords_sig, cluster_q_centers) # latent coords of signal obtained from AE
+cluster_q_assign_qcd, q_dist_qcd = cluster_q.assign_clusters(latent_coords_qcd, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of qcd train obtained from AE
+cluster_q_assign_sig, q_dist_sig = cluster_q.assign_clusters(latent_coords_sig, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of signal obtained from AE
 print('[main_predict_clustering] >>> plotting quantum cluster assignments')
 plot.plot_clusters_pairplot(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
 plot.plot_clusters_pairplot(latent_coords_sig, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)

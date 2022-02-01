@@ -21,7 +21,7 @@ import util.preprocessing as prep
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min')
-params = Parameters(run_n=16, ae_run_n=50, read_n=int(2e1), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=False)
+params = Parameters(run_n=17, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=False)
 
 
 #****************************************#

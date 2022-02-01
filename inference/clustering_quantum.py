@@ -1,16 +1,11 @@
 import numpy as np
-import logging
+import util.logging as log
 import quantum.dist_calc as dica
 import quantum.minimization as mini
 
 
 # logging config
-logger = logging.getLogger(__name__)
-fh = logging.StreamHandler()
-fh_formatter = logging.Formatter('%(asctime)s %(levelname)-8s [%(filename)s:%(funcName)s] %(message)s')
-fh.setFormatter(fh_formatter)
-logger.addHandler(fh)
-
+logger = log.get_logger(__name__)
 
 def calc_new_cluster_centers(data, cluster_assignments, n_clusters=2):
     return np.array([data[cluster_assignments == i].mean(axis=0) for i in range(n_clusters)])
@@ -39,8 +34,6 @@ def assign_clusters(data, cluster_centers, quantum_min=True):
     cluster_assignments = []
     distances = []
 
-    import ipdb; ipdb.set_trace()
-    
     # for each sample
     for i, sample in enumerate(data):
 
