@@ -13,7 +13,7 @@ import inference.predict_autoencoder as pred
 import data.data_sample as dasa
 import util.persistence as pers
 import util.preprocessing as prep
-
+import util.logging as log
 
 
 #****************************************#
@@ -23,6 +23,9 @@ import util.preprocessing as prep
 Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min')
 params = Parameters(run_n=17, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=False)
 
+# logging
+logger = log.get_logger(__name__)
+log.info('*'*50+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*50)
 
 #****************************************#
 #      load data latent representation

@@ -23,6 +23,7 @@ import pofah.jet_sample as jesa
 import dadrah.selection.loss_strategy as losa
 import pofah.util.sample_factory as safa
 import util.preprocessing as prep
+import util.logging as log
 
 
 def combine_loss_min(loss):
@@ -47,7 +48,10 @@ params = Parameters(run_n=14,
                     quantum_min=True)
 fig_dir = 'fig/run_'+str(params.run_n)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
-print('*'*50+'\n'+'prediction run '+str(params.run_n)+' on '+str(params.read_n)+' samples'+'\n'+'*'*50)
+
+# logging
+logger = log.get_logger(__name__)
+log.info('*'*50+'\n'+'\t\t\t PREDICTION RUN \n'+str(params)+'\n'+'*'*50)
 
 
 #****************************************#
