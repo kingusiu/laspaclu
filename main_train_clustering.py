@@ -20,12 +20,12 @@ import util.logging as log
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min')
-params = Parameters(run_n=17, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=False)
+Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min rtol')
+params = Parameters(run_n=20, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=False, rtol=5e-2)
 
 # logging
 logger = log.get_logger(__name__)
-log.info('*'*50+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*50)
+logger.info('\n'+'*'*60+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*60)
 
 #****************************************#
 #      load data latent representation
@@ -75,7 +75,7 @@ jli.dump(cluster_model, model_path+'.joblib')
 ## train quantum kmeans
 
 print('>>> training qmeans')
-cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min)
+cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min, rtol=params.rtol)
 
 model_path_qm = pers.make_model_path(prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'wb') as f:

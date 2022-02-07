@@ -48,7 +48,7 @@ def assign_clusters(data, cluster_centers, quantum_min=True):
     return np.asarray(cluster_assignments), np.asarray(distances) 
 
 
-def train_qmeans(data, n_clusters=2, quantum_min=True):
+def train_qmeans(data, n_clusters=2, quantum_min=True, rtol=1e-2):
     """
         train quantum k-means 
         :param data: input array of shape [N x Z] where N .. number of samples, Z .. dimension of latent space
@@ -70,7 +70,7 @@ def train_qmeans(data, n_clusters=2, quantum_min=True):
         logger.info('>>> iter {}: new centers {}'.format(i,new_centers))
         i = i+1
 
-        if np.allclose(new_centers, cluster_centers, rtol=1.e-2):
+        if np.allclose(new_centers, cluster_centers, rtol=rtol):
             break
 
         cluster_centers = new_centers

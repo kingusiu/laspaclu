@@ -51,7 +51,7 @@ pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 # logging
 logger = log.get_logger(__name__)
-log.info('*'*50+'\n'+'\t\t\t PREDICTION RUN \n'+str(params)+'\n'+'*'*50)
+logger.info('*'*50+'\n'+'\t\t\t PREDICTION RUN \n'+str(params)+'\n'+'*'*50)
 
 
 #****************************************#
@@ -162,7 +162,7 @@ dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 
 output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
 pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-print('[main_predict_clustering] >>> writing results to ' + output_dir)
+log.info(' >>> writing results to ' + output_dir)
 
 # qcd results
 sample_qcd_out = jesa.JetSample.from_latent_jet_sample(sample_qcd)
@@ -190,6 +190,7 @@ pu.plot_feature_for_n_samples([dist_q_qcd, dist_q_sig], sample_names=[params.sam
 
 # inclusive roc
 roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], title=' '.join([params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir)
+
 # binned roc
 loss_dict = {
     'classic' : losa.LossStrategy(loss_fun=(lambda x : x['classic_loss']), title_str='classic kmeans', file_str='classic_kmeans'),
