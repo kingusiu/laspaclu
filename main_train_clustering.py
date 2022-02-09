@@ -21,7 +21,7 @@ import util.logging as log
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min rtol')
-params = Parameters(run_n=20, ae_run_n=50, read_n=int(1e3), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=False, rtol=5e-2)
+params = Parameters(run_n=22, ae_run_n=50, read_n=int(600), sample_id_train='qcdSig', cluster_alg='kmeans', normalize=False, quantum_min=True, rtol=3e-2)
 
 # logging
 logger = log.get_logger(__name__)

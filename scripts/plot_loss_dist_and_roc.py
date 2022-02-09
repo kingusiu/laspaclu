@@ -6,6 +6,13 @@ import pofah.jet_sample as jesa
 from collections import namedtuple
 
 
+sample_name_dict = {
+    
+    'qcdSigExt': 'QCD sideband',
+    'GtoWW35na': r'$G(3.5 TeV)\to WW$ narrow reco',
+}
+
+
 # setup
 mG = 3500
 Parameters = namedtuple('Parameters', 'run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize')
@@ -33,11 +40,11 @@ dist_q_sig = sample_sig['quantum_loss']
 xlabel = 'sum distances to clusters'
 
 # plot classic distances
-pu.plot_feature_for_n_samples([dist_qcd, dist_sig], sample_names=[params.sample_id_qcd, params.sample_id_sig], \
+pu.plot_feature_for_n_samples([dist_qcd, dist_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
     xlabel=xlabel, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
 
 # plot quantum distances
-pu.plot_feature_for_n_samples([dist_q_qcd, dist_q_sig], sample_names=[params.sample_id_qcd, params.sample_id_sig], \
+pu.plot_feature_for_n_samples([dist_q_qcd, dist_q_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
     xlabel='quantum '+xlabel, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
 
 # inclusive roc
