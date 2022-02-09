@@ -7,9 +7,9 @@ from collections import namedtuple
 
 
 sample_name_dict = {
-    
-    'qcdSigExt': 'QCD sideband',
-    'GtoWW35na': r'$G(3.5 TeV)\to WW$ narrow reco',
+
+    'qcdSigExt': 'QCD signal-region',
+    'GtoWW35na': r'$G(3.5 TeV)\to WW$ narrow',
 }
 
 
@@ -41,11 +41,11 @@ xlabel = 'sum distances to clusters'
 
 # plot classic distances
 pu.plot_feature_for_n_samples([dist_qcd, dist_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
-    xlabel=xlabel, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
+    xlabel=xlabel, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=sample_name_dict[params.sample_id_qcd], legend_outside=False)
 
 # plot quantum distances
 pu.plot_feature_for_n_samples([dist_q_qcd, dist_q_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
-    xlabel='quantum '+xlabel, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
+    xlabel='quantum '+xlabel, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=sample_name_dict[params.sample_id_qcd], legend_outside=False)
 
 # inclusive roc
 roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir)

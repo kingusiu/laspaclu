@@ -9,6 +9,13 @@ import pofah.jet_sample as jesa
 from collections import namedtuple
 
 
+sample_name_dict = {
+    
+    'qcdSigExt': 'QCD signal-region',
+    'GtoWW35na': r'$G(3.5 TeV)\to WW$ narrow',
+}
+
+
 # setup
 Parameters = namedtuple('Parameters', 'run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize')
 params = Parameters(run_n=14, read_n=int(5e4), sample_id_qcd='qcdSigExt', sample_id_sig='GtoWW35na', cluster_alg='svm', normalize=False)
@@ -53,12 +60,12 @@ dist_quantum_sig = dist_quantum.flatten()[bg_sig_split:]
 xlabel = 'distance to boundary'
 
 # plot classic distances
-pu.plot_feature_for_n_samples([dist_classic_qcd, dist_classic_sig], sample_names=[params.sample_id_qcd, params.sample_id_sig], \
-    xlabel=xlabel, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
+pu.plot_feature_for_n_samples([dist_classic_qcd, dist_classic_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
+    xlabel=xlabel, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=sample_name_dict[params.sample_id_qcd], legend_outside=False)
 
 # plot quantum distances
-pu.plot_feature_for_n_samples([dist_quantum_qcd, dist_quantum_sig], sample_names=[params.sample_id_qcd, params.sample_id_sig], \
-    xlabel='quantum '+xlabel, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=params.sample_id_qcd)
+pu.plot_feature_for_n_samples([dist_quantum_qcd, dist_quantum_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
+    xlabel='quantum '+xlabel, plot_name='quantum_loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=sample_name_dict[params.sample_id_qcd], legend_outside=False)
 
 # inclusive roc
 roc.plot_roc([dist_classic_sig, dist_quantum_sig], [dist_classic_qcd, dist_quantum_qcd], legend=['classic svm', 'quantum svm'], \
