@@ -51,8 +51,7 @@ pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 # logging
 logger = log.get_logger(__name__)
-logger.info('\n'+'*'*50+'\n'+'\t\t\t PREDICTION RUN \n'+str(params)+'\n'+'*'*50)
-
+logger.info('\n'+'*'*70+'\n'+'\t\t\t PREDICTION RUN \n'+str(params)+'\n'+'*'*70)
 
 #****************************************#
 #           load CLUSTERING model
