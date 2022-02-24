@@ -36,8 +36,6 @@ def read_latent_jet_sample(input_dir, sample_id, read_n=None, mJJ_binned=False):
     file_name = os.path.join(input_dir, sample_id+'.h5')
     print('>>> reading {} events from {}'.format(str(read_n),file_name))
 
-    sample = jesa.JetSampleLatent.from_input_file(name=sample_id, path=file_name, read_n=read_n)
+    return jesa.JetSampleLatent.from_input_file(name=sample_id, path=file_name, read_n=read_n)
 
-    if mJJ_binned:
-        
-
+    # add mjj binned reading option

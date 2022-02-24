@@ -59,6 +59,9 @@ dist_quantum_sig = dist_quantum.flatten()[bg_sig_split:]
 
 xlabel = 'distance to boundary'
 
+# get shared xlimits
+xmin, xmax = min(min(min(dist_classic_qcd), min(dist_classic_sig)), min(min(dist_quantum_qcd), min(dist_quantum_sig))), max(max(max(dist_classic_qcd), max(dist_classic_sig)), max(max(dist_quantum_qcd), max(dist_quantum_sig))) 
+
 # plot classic distances
 pu.plot_feature_for_n_samples([dist_classic_qcd, dist_classic_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
     xlabel=xlabel, plot_name='loss_qcd_vs_sig_'+params.cluster_alg, fig_dir=fig_dir, bg_name=sample_name_dict[params.sample_id_qcd], legend_outside=False)

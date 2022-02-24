@@ -33,7 +33,7 @@ dist_sig = sample_sig['classic_loss']
 dist_q_qcd = sample_qcd['quantum_loss']
 dist_q_sig = sample_sig['quantum_loss']
 
-import ipdb; ipdb.set_trace()
+# import ipdb; ipdb.set_trace()
 
 #****************************************#
 #               ANALYSIS
@@ -42,7 +42,7 @@ import ipdb; ipdb.set_trace()
 xlabel = 'sum distances to clusters'
 
 # get shared xlimits
-xmin, xmax = min(min(dist_qcd, dist_sig), min(dist_q_qcd, dist_q_sig)), max(max(dist_qcd, dist_sig), max(dist_q_qcd, dist_q_sig)) 
+xmin, xmax = min(min(min(dist_qcd), min(dist_sig)), min(min(dist_q_qcd), min(dist_q_sig))), max(max(max(dist_qcd), max(dist_sig)), max(max(dist_q_qcd), max(dist_q_sig))) 
 
 # plot classic distances
 pu.plot_feature_for_n_samples([dist_qcd, dist_sig], sample_names=[sample_name_dict[params.sample_id_qcd], sample_name_dict[params.sample_id_sig]], \
