@@ -37,10 +37,10 @@ def combine_loss_min(loss):
 
 mG = 3500
 Parameters = namedtuple('Parameters', 'run_n date_model ae_run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize quantum_min')
-params = Parameters(run_n=22, 
-                    date_model='20220209',
+params = Parameters(run_n=23, 
+                    date_model='20220303',
                     ae_run_n=50, 
-                    read_n=int(1e4), 
+                    read_n=int(1e5), 
                     sample_id_qcd='qcdSigExt', 
                     sample_id_sig='GtoWW35na', 
                     cluster_alg='kmeans', 

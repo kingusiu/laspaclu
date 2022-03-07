@@ -72,7 +72,8 @@ pu.plot_feature_for_n_samples([dist_quantum_qcd, dist_quantum_sig], sample_names
 
 # inclusive roc
 roc.plot_roc([dist_classic_sig, dist_quantum_sig], [dist_classic_qcd, dist_quantum_qcd], legend=['classic svm', 'quantum svm'], \
-    plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir, n_train=600, n_rand_class=int(1e2))
+    plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir, \
+    n_train=600, n_rand_class=int(1e2), fig_format='.pdf')
 
 # plot_roc(fpr_classic, tpr_classic, fpr_quantum, tpr_quantum,  legend=['classic svm', 'quantum svm'], \
 #     plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir, n_train=600, n_rand_class=10)

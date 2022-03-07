@@ -21,9 +21,9 @@ import util.logging as log
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min rtol mjj_center')
-params = Parameters(run_n=22,
+params = Parameters(run_n=23,
                     ae_run_n=50,
-                    read_n=int(1e3),
+                    read_n=int(1e6),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     normalize=False,
@@ -41,7 +41,7 @@ logger.info('\n'+'*'*60+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*60)
 
 input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
 sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_train, read_n=params.read_n)
-if mjj_center:
+if params.mjj_center:
     sample_qcd = jesa.get_mjj_binned_sample_center_bin(sample_qcd, mjj_peak=3500) 
 latent_coords_qcd = pers.read_latent_representation(sample_qcd)
 logger.info('read {} training samples ({} jets)'.format(len(latent_coords_qcd)/2, len(latent_coords_qcd))) # stacked j1 & j2
