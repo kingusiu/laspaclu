@@ -40,7 +40,7 @@ Parameters = namedtuple('Parameters', 'run_n date_model ae_run_n read_n sample_i
 params = Parameters(run_n=23, 
                     date_model='20220303',
                     ae_run_n=50, 
-                    read_n=int(1e5), 
+                    read_n=None, 
                     sample_id_qcd='qcdSigExt', 
                     sample_id_sig='GtoWW35na', 
                     cluster_alg='kmeans', 
@@ -63,12 +63,12 @@ logger.info('\n'+'*'*70+'\n'+'\t\t\t PREDICTION RUN \n'+str(params)+'\n'+'*'*70)
 if params.cluster_alg == 'kmeans':
 
     model_path_km = pers.make_model_path(date=params.date_model, prefix='KM', run_n=params.run_n)
-    print('[main_predict_clustering] >>> loading clustering model ' + model_path_km)
+    logger.info('loading clustering model ' + model_path_km)
 
     cluster_model = jli.load(model_path_km+'.joblib')    
     cluster_centers = cluster_model.cluster_centers_
-    print('classic cluster centers: ')
-    print(cluster_centers)
+    logger.info('classic cluster centers: ')
+    logger.info(cluster_centers)
 
 
 #****************************************#
@@ -77,7 +77,7 @@ if params.cluster_alg == 'kmeans':
 else:
 
     model_path_svm = pers.make_model_path(date='20211006', prefix='SVM')
-    print('[main_predict_clustering] >>> loading clustering model ' + model_path_svm)
+    logger.info('loading clustering model ' + model_path_svm)
 
     cluster_model = jli.load(model_path_svm+'.joblib')    
     cluster_centers = None # no cluster centers for one class svm
@@ -95,17 +95,19 @@ latent_coords_sig = pers.read_latent_representation(sample_sig, shuffle=False) #
 if params.normalize:
     latent_coords_qcd, latent_coords_sig = prep.min_max_normalize_all_data(latent_coords_qcd, latent_coords_sig)
 
+logger.info('read {} {} events and {} {} events'.format(len(sample_qcd), params.sample_id_qcd, len(sample_sig), params.sample_id_sig))
+
 
 #****************************************#
 #           apply clustering
 #****************************************#
 
-print('[main_predict_clustering] >>> applying classic clustering model')
+logger.info('applying classic clustering model')
 
 cluster_assign_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of qcd obtained from AE
 cluster_assign_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
 
-print('[main_predict_clustering] >>> plotting classic cluster assignments')
+logger.info('plotting classic cluster assignments')
 
 plot.plot_clusters_pairplot(latent_coords_qcd, cluster_assign_qcd, cluster_centers, filename_suffix=params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
 plot.plot_clusters_pairplot(latent_coords_sig, cluster_assign_sig, cluster_centers, filename_suffix=params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
@@ -115,7 +117,7 @@ plot.plot_clusters_pairplot(latent_coords_sig, cluster_assign_sig, cluster_cente
 #               METRIC
 #****************************************#
 
-print('[main_predict_clustering] >>> computing classic clustering metrics')
+logger.info('computing classic clustering metrics')
 
 dist_qcd = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_qcd, model=cluster_model)
 dist_sig = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_sig, model=cluster_model)
@@ -133,23 +135,23 @@ else:
 #               QUANTUM CLUSTERING
 #****************************************#
 
-print('[main_predict_clustering] >>> loading qmeans')
+logger.info('loading qmeans')
 model_path_qm = pers.make_model_path(date=params.date_model, prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f)
-print('quantum cluster centers: ')
-print(cluster_q_centers)
+logger.info('quantum cluster centers: ')
+logger.info(cluster_q_centers)
 
 
 # apply clustering algo
-print('[main_predict_clustering] >>> applying quantum clustering model')
+logger.info('applying quantum clustering model')
 cluster_q_assign_qcd, q_dist_qcd = cluster_q.assign_clusters(latent_coords_qcd, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of qcd train obtained from AE
 cluster_q_assign_sig, q_dist_sig = cluster_q.assign_clusters(latent_coords_sig, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of signal obtained from AE
-print('[main_predict_clustering] >>> plotting quantum cluster assignments')
+logger.info('plotting quantum cluster assignments')
 plot.plot_clusters_pairplot(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
 plot.plot_clusters_pairplot(latent_coords_sig, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
 
-print('[main_predict_clustering] >>> computing quantum clustering metrics')
+logger.info('computing quantum clustering metrics')
 dist_q_qcd = metr.compute_quantum_metric_score(q_dist_qcd, cluster_q_assign_qcd)
 dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 
@@ -161,7 +163,7 @@ dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
 
 output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
 pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-logger.info(' >>> writing results to ' + output_dir)
+logger.info('writing results to ' + output_dir)
 
 # qcd results
 sample_qcd_out = jesa.JetSample.from_latent_jet_sample(sample_qcd)
