@@ -16,6 +16,17 @@ import util.preprocessing as prep
 import util.logging as log
 
 
+def read_latent_rep_from_file(input_dir, params, raw_format=False):
+
+    if raw_format: # add raw format option if data not saved in JetSampleLatent structure
+        
+
+
+    sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_train, read_n=params.read_n)
+    if params.mjj_center:
+        sample_qcd = jesa.get_mjj_binned_sample_center_bin(sample_qcd, mjj_peak=3500) 
+    return pers.read_latent_representation(sample_qcd)
+
 #****************************************#
 #           Runtime Params
 #****************************************#
@@ -40,10 +51,7 @@ logger.info('\n'+'*'*60+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*60)
 #****************************************#
 
 input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_train, read_n=params.read_n)
-if params.mjj_center:
-    sample_qcd = jesa.get_mjj_binned_sample_center_bin(sample_qcd, mjj_peak=3500) 
-latent_coords_qcd = pers.read_latent_representation(sample_qcd)
+
 logger.info('read {} training samples ({} jets)'.format(len(latent_coords_qcd)/2, len(latent_coords_qcd))) # stacked j1 & j2
 
 

@@ -1,6 +1,7 @@
 import os
 import datetime
 import pathlib
+import h5py
 import numpy as np
 import pofah.jet_sample as jesa
 
@@ -37,3 +38,29 @@ def read_latent_jet_sample(input_dir, sample_id, read_n=None, mJJ_binned=False):
     print('>>> reading {} events from {}'.format(str(read_n),file_name))
 
     return jesa.JetSampleLatent.from_input_file(name=sample_id, path=file_name, read_n=read_n)
+
+
+def read_latent_representation_raw(input_dir, sample_id, read_n=None, shuffle=True):
+
+    file_name = os.path.join(input_dir, sample_id+'.h5')
+    print('>>> reading {} events from {}'.format(str(read_n),file_name))
+
+    # different keys for each datafile...
+    latent_dat_key = {
+        'latentrep_QCD_sig' : 'latent_space',
+        'latentrep_RSGraviton_WW_NA' : 'latent_space_NA_RSGraviton_WW_NA_3.5',
+        'latentrep_RSGraviton_WW_BR' : 'latent_space_BR_RSGraviton_WW_BR_1.5',
+        'latentrep_AtoHZ_to_ZZZ' : 'latent_space_AtoHZ_to_ZZZ_3.5'
+    }
+
+    ff = h5py.File(file_name,'r')
+
+    # where are the two jets??
+    latent_coords = np.array(ff.get(latent_dat_key[sample_id]))[:read_n]
+
+    if shuffle:
+        np.random.shuffle(latent_coords)
+
+    return latent_coords
+
+
