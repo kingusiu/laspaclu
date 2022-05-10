@@ -19,28 +19,28 @@ import util.logging as log
 def read_latent_rep_from_file(input_dir, params, raw_format=False):
 
     if raw_format: # add raw format option if data not saved in JetSampleLatent structure
-        
-
+        return pers.read_latent_representation_raw(input_dir, params.sample_id_train, read_n=params.read_n)
 
     sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_train, read_n=params.read_n)
     if params.mjj_center:
         sample_qcd = jesa.get_mjj_binned_sample_center_bin(sample_qcd, mjj_peak=3500) 
     return pers.read_latent_representation(sample_qcd)
 
+
 #****************************************#
 #           Runtime Params
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min rtol mjj_center')
-params = Parameters(run_n=23,
+params = Parameters(run_n=25,
                     ae_run_n=50,
-                    read_n=int(1e6),
+                    read_n=int(6e3),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     normalize=False,
                     quantum_min=True,
                     rtol=3e-2,
-                    mjj_center=True)
+                    mjj_center=False)
 
 # logging
 logger = log.get_logger(__name__)
@@ -51,7 +51,7 @@ logger.info('\n'+'*'*60+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*60)
 #****************************************#
 
 input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-
+latent_coords_qcd = read_latent_rep_from_file(input_dir, params)
 logger.info('read {} training samples ({} jets)'.format(len(latent_coords_qcd)/2, len(latent_coords_qcd))) # stacked j1 & j2
 
 

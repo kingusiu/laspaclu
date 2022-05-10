@@ -37,17 +37,21 @@ def combine_loss_min(loss):
 
 mG = 3500
 Parameters = namedtuple('Parameters', 'run_n date_model ae_run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize quantum_min')
-params = Parameters(run_n=23, 
-                    date_model='20220303',
+params = Parameters(run_n=24, 
+                    date_model='20220510',
                     ae_run_n=50, 
                     read_n=None, 
-                    sample_id_qcd='qcdSigExt', 
-                    sample_id_sig='GtoWW35na', 
+                    sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     cluster_alg='kmeans', 
                     normalize=False,
                     quantum_min=True)
+
+# path setup
 fig_dir = 'fig/run_'+str(params.run_n)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
+input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
+output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
+pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 # logging
 logger = log.get_logger(__name__)
@@ -84,55 +88,7 @@ else:
 
 
 #****************************************#
-#      load data latent representation
-#****************************************#
-
-input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_qcd, read_n=params.read_n) 
-latent_coords_qcd = pers.read_latent_representation(sample_qcd, shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
-sample_sig = pers.read_latent_jet_sample(input_dir, params.sample_id_sig, read_n=params.read_n) 
-latent_coords_sig = pers.read_latent_representation(sample_sig, shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
-if params.normalize:
-    latent_coords_qcd, latent_coords_sig = prep.min_max_normalize_all_data(latent_coords_qcd, latent_coords_sig)
-
-logger.info('read {} {} events and {} {} events'.format(len(sample_qcd), params.sample_id_qcd, len(sample_sig), params.sample_id_sig))
-
-
-#****************************************#
-#           apply clustering
-#****************************************#
-
-logger.info('applying classic clustering model')
-
-cluster_assign_qcd = cluster_model.predict(latent_coords_qcd) # latent coords of qcd obtained from AE
-cluster_assign_sig = cluster_model.predict(latent_coords_sig) # latent coords of signal obtained from AE
-
-logger.info('plotting classic cluster assignments')
-
-plot.plot_clusters_pairplot(latent_coords_qcd, cluster_assign_qcd, cluster_centers, filename_suffix=params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
-plot.plot_clusters_pairplot(latent_coords_sig, cluster_assign_sig, cluster_centers, filename_suffix=params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
-
-
-#****************************************#
-#               METRIC
-#****************************************#
-
-logger.info('computing classic clustering metrics')
-
-dist_qcd = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_qcd, model=cluster_model)
-dist_sig = metr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords_sig, model=cluster_model)
-
-if params.cluster_alg == 'kmeans':
-    xlabel = 'sum distances to clusters'
-    title = 'euclidian distance distribution qcd vs sig'
-else:
-    xlabel = 'distance to border'
-    title = 'distance to decision border distribution qcd vs sig'
-
-
-
-#****************************************#
-#               QUANTUM CLUSTERING
+#               load QUANTUM model
 #****************************************#
 
 logger.info('loading qmeans')
@@ -143,35 +99,71 @@ logger.info('quantum cluster centers: ')
 logger.info(cluster_q_centers)
 
 
-# apply clustering algo
-logger.info('applying quantum clustering model')
-cluster_q_assign_qcd, q_dist_qcd = cluster_q.assign_clusters(latent_coords_qcd, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of qcd train obtained from AE
-cluster_q_assign_sig, q_dist_sig = cluster_q.assign_clusters(latent_coords_sig, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of signal obtained from AE
-logger.info('plotting quantum cluster assignments')
-plot.plot_clusters_pairplot(latent_coords_qcd, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_qcd, fig_dir=fig_dir)
-plot.plot_clusters_pairplot(latent_coords_sig, cluster_q_assign_sig, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+params.sample_id_sig, fig_dir=fig_dir)
 
-logger.info('computing quantum clustering metrics')
-dist_q_qcd = metr.compute_quantum_metric_score(q_dist_qcd, cluster_q_assign_qcd)
-dist_q_sig = metr.compute_quantum_metric_score(q_dist_sig, cluster_q_assign_sig)
+for sample_id in params.sample_ids:
+
+    #****************************************#
+    #      load data latent representation
+    #****************************************#
+
+    sample_in = pers.read_latent_jet_sample(input_dir, sample_id, read_n=params.read_n) 
+    latent_coords = pers.read_latent_representation(sample_in, shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
+    # if params.normalize: # not using normalization at the moment, if to use again -> adapt for multiple signal samples
+    #     latent_coords_qcd, latent_coords_sig = prep.min_max_normalize_all_data(latent_coords_qcd, latent_coords_sig)
+
+    logger.info('read {} {} events'.format(len(sample_in), sample_id))
 
 
+    #****************************************#
+    #           apply clustering
+    #****************************************#
 
-#****************************************#
-#               WRITE RESULTS
-#****************************************#
+    logger.info('applying classic clustering model')
 
-output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
-pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
-logger.info('writing results to ' + output_dir)
+    cluster_assign = cluster_model.predict(latent_coords) # latent coords obtained from AE
 
-# qcd results
-sample_qcd_out = jesa.JetSample.from_latent_jet_sample(sample_qcd)
-sample_qcd_out.add_feature('classic_loss', combine_loss_min(dist_qcd))
-sample_qcd_out.add_feature('quantum_loss', combine_loss_min(dist_q_qcd))
-sample_qcd_out.dump(os.path.join(output_dir, sample_qcd_out.name+'.h5'))
-# signal results
-sample_sig_out = jesa.JetSample.from_latent_jet_sample(sample_sig)
-sample_sig_out.add_feature('classic_loss', combine_loss_min(dist_sig))
-sample_sig_out.add_feature('quantum_loss', combine_loss_min(dist_q_sig))
-sample_sig_out.dump(os.path.join(output_dir, sample_sig_out.name+'.h5'))
+    logger.info('plotting classic cluster assignments')
+
+    plot.plot_clusters_pairplot(latent_coords, cluster_assign, cluster_centers, filename_suffix=params.cluster_alg+'_'+sample_id, fig_dir=fig_dir)
+
+
+    #****************************************#
+    #               METRIC
+    #****************************************#
+
+    logger.info('computing classic clustering metrics')
+
+    metric_cetr.compute_metric_score(algo_str=params.cluster_alg, coords=latent_coords, model=cluster_model)
+
+    if params.cluster_alg == 'kmeans':
+        xlabel = 'sum distances to clusters'
+        title = 'euclidian distance distribution qcd vs sig'
+    else:
+        xlabel = 'distance to border'
+        title = 'distance to decision border distribution qcd vs sig'
+
+
+    #****************************************#
+    #          apply QUANTUM CLUSTERING
+    #****************************************#
+
+    # apply clustering algo
+    logger.info('applying quantum clustering model')
+    cluster_assign_q, distances_q = cluster_q.assign_clusters(latent_coords, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of qcd train obtained from AE
+    logger.info('plotting quantum cluster assignments')
+    plot.plot_clusters_pairplot(latent_coords, cluster_assign_q, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+sample_id, fig_dir=fig_dir)
+
+    logger.info('computing quantum clustering metrics')
+    metric_q = metr.compute_quantum_metric_score(distances_q, cluster_assign_q)
+
+
+    #****************************************#
+    #               WRITE RESULTS
+    #****************************************#
+
+    logger.info('writing results to ' + output_dir)
+
+    sample_out = jesa.JetSample.from_latent_jet_sample(sample_in)
+    sample_out.add_feature('classic_loss', combine_loss_min(metric_c))
+    sample_out.add_feature('quantum_loss', combine_loss_min(metric_q))
+    sample_out.dump(os.path.join(output_dir, sample_out.name+'.h5'))
