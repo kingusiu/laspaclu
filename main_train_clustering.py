@@ -5,6 +5,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 import joblib as jli
+from qiskit.utils import algorithm_globals
 
 import pofah.jet_sample as jesa
 import inference.clustering_classic as cluster
@@ -16,31 +17,26 @@ import util.preprocessing as prep
 import util.logging as log
 
 
-def read_latent_rep_from_file(input_dir, params, raw_format=False):
-
-    if raw_format: # add raw format option if data not saved in JetSampleLatent structure
-        return pers.read_latent_representation_raw(input_dir, params.sample_id_train, read_n=params.read_n)
-
-    sample_qcd = pers.read_latent_jet_sample(input_dir, params.sample_id_train, read_n=params.read_n)
-    if params.mjj_center:
-        sample_qcd = jesa.get_mjj_binned_sample_center_bin(sample_qcd, mjj_peak=3500) 
-    return pers.read_latent_representation(sample_qcd)
-
-
 #****************************************#
 #           Runtime Params
 #****************************************#
 
-Parameters = namedtuple('Parameters', 'run_n ae_run_n read_n sample_id_train cluster_alg normalize quantum_min rtol mjj_center')
-params = Parameters(run_n=25,
+Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg normalize quantum_min rtol mjj_center raw_format')
+params = Parameters(run_n=33,
                     ae_run_n=50,
-                    read_n=int(6e3),
+                    lat_dim=8,
+                    read_n=int(600),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     normalize=False,
                     quantum_min=True,
-                    rtol=3e-2,
-                    mjj_center=False)
+                    rtol=1e-2,
+                    mjj_center=False,
+                    raw_format=True)
+
+# set seed
+seed = 12345
+algorithm_globals.random_seed = seed
 
 # logging
 logger = log.get_logger(__name__)
@@ -50,8 +46,9 @@ logger.info('\n'+'*'*60+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*60)
 #      load data latent representation
 #****************************************#
 
-input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-latent_coords_qcd = read_latent_rep_from_file(input_dir, params)
+# input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
+input_dir = '/eos/home-e/epuljak/private/epuljak/public/diJet/'+str(int(params.lat_dim))
+latent_coords_qcd = pers.read_latent_rep_from_file(input_dir, sample_id=params.sample_id_train, read_n=params.read_n, raw_format=params.raw_format, shuffle=True, seed=seed)
 logger.info('read {} training samples ({} jets)'.format(len(latent_coords_qcd)/2, len(latent_coords_qcd))) # stacked j1 & j2
 
 

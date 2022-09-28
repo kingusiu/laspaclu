@@ -36,8 +36,10 @@ def combine_loss_min(loss):
 #           Runtime Params
 #****************************************#
 
+seed = 12345
+
 mG = 3500
-Parameters = namedtuple('Parameters', 'run_n latent_dim date_model ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
+Parameters = namedtuple('Parameters', 'run_n latent_dim date_model ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format kfold_n')
 params = Parameters(run_n=32, 
                     latent_dim=16,
                     date_model='20220512', #'20220209'
@@ -47,7 +49,8 @@ params = Parameters(run_n=32,
                     cluster_alg='kmeans', 
                     normalize=False,
                     quantum_min=True,
-                    raw_format=True)
+                    raw_format=True,
+                    kfold_n=10)
 
 # path setup
 fig_dir = 'fig/run_'+str(params.run_n)

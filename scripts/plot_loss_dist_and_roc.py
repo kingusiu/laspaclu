@@ -76,6 +76,7 @@ pu.plot_feature_for_n_samples([dist_q_qcd_center_bin, dist_q_sig_center_bin], sa
 roc.plot_roc([dist_qcd, dist_q_qcd], [dist_sig, dist_q_sig], legend=['classic kmeans', 'quantum kmeans'], \
     plot_name='_'.join(['ROC', params.sample_id_qcd, 'vs', params.sample_id_sig, params.cluster_alg]), fig_dir=fig_dir, \
     n_train=params.n_train, n_rand_class=int(1e2), fig_format='.pdf')
+
 # binned roc
 loss_dict = {
     'classic' : losa.LossStrategy(loss_fun=(lambda x : x['classic_loss']), title_str='classic kmeans', file_str='classic_kmeans'),

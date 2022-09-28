@@ -6,12 +6,9 @@ import numpy as np
 import pofah.jet_sample as jesa
 
 
-def make_model_path(date=None, prefix='AE', run_n=0, mkdir=False):
+def make_model_path(prefix='KM', run_n=0, mkdir=False):
 
-    if date is None:
-        date = datetime.date.today()
-        date = '{}{:02d}{:02d}'.format(date.year, date.month, date.day)
-    path = os.path.join('models/saved', prefix+'model_run{}_{}'.format(str(run_n), date))
+    path = os.path.join('models/saved', prefix+'model_run{}'.format(str(run_n)))
     if mkdir:
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     return path
@@ -41,27 +38,37 @@ def read_latent_jet_sample(input_dir, sample_id, read_n=None, mJJ_binned=False):
 
 
 # read data from external format
-def read_latent_representation_raw(input_dir, sample_id, read_n=None, shuffle=True):
+def read_latent_representation_raw(input_dir, sample_id, read_n=None, shuffle=True, seed=None):
 
-    file_name = os.path.join(input_dir, sample_id+'.h5')
-    print('>>> reading {} events from {}'.format(str(read_n),file_name))
-
-    # different keys for each datafile...
-    latent_dat_key = {
-        'latentrep_QCD_sig' : 'latent_space',
-        'latentrep_RSGraviton_WW_NA' : 'latent_space_NA_RSGraviton_WW_NA_3.5',
-        'latentrep_RSGraviton_WW_BR' : 'latent_space_BR_RSGraviton_WW_BR_1.5',
-        'latentrep_AtoHZ_to_ZZZ' : 'latent_space_AtoHZ_to_ZZZ_3.5'
+    file_name_dict = {
+        'qcdSig' : 'latentrep_QCD_sig.h5',
+        'qcdSigExt' : 'latentrep_QCD_sig_testclustering.h5',
+        'GtoWW35na' : 'latentrep_RSGraviton_WW_NA_35.h5',
+        'GtoWW15br' : 'latentrep_RSGraviton_WW_BR_15.h5',
+        'AtoHZ35' : 'latentrep_AtoHZ_to_ZZZ_35.h5'
     }
+
+    file_name = os.path.join(input_dir, file_name_dict[sample_id])
+    print('>>> reading {} events from {}'.format(str(read_n),file_name))
 
     ff = h5py.File(file_name,'r')
 
-    # where are the two jets??
-    latent_coords = np.array(ff.get(latent_dat_key[sample_id]))[:read_n]
+    latent_coords = np.array(ff.get('latent_space'))[:read_n]
+    latent_coords = np.vstack([latent_coords[:,0,:], latent_coords[:,1,:]])
 
     if shuffle:
+        np.random.seed(seed)
         np.random.shuffle(latent_coords)
 
     return latent_coords
 
 
+def read_latent_rep_from_file(input_dir, sample_id, read_n=None, raw_format=False, shuffle=False, mjj_center=False, seed=None):
+
+    if raw_format: # add raw format option if data not saved in JetSampleLatent structure
+        return read_latent_representation_raw(input_dir, sample_id, read_n=read_n, shuffle=shuffle, seed=seed)
+
+    sample = read_latent_jet_sample(input_dir, sample_id, read_n=read_n)
+    if mjj_center:
+        sample = jesa.get_mjj_binned_sample_center_bin(sample, mjj_peak=3500) 
+    return pers.read_latent_representation(sample, shuffle=shuffle)
