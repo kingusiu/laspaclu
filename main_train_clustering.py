@@ -11,7 +11,7 @@ import pofah.jet_sample as jesa
 import inference.clustering_classic as cluster
 import inference.clustering_quantum as cluster_q
 import inference.predict_autoencoder as pred
-import data.data_sample as dasa
+import laspaclu.data.data_sample as dasa
 import util.persistence as pers
 import util.preprocessing as prep
 import util.logging as log
@@ -22,10 +22,10 @@ import util.logging as log
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg normalize quantum_min rtol mjj_center raw_format')
-params = Parameters(run_n=33,
+params = Parameters(run_n=36,
                     ae_run_n=50,
-                    lat_dim=8,
-                    read_n=int(600),
+                    lat_dim=16,
+                    read_n=int(6000),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     normalize=False,

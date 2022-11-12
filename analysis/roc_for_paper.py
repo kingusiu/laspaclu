@@ -67,7 +67,7 @@ def plot_roc(class_labels, losses, legend_colors, legend_colors_title, test_n=in
 
     line_type_n = len(class_labels[0]) # classic vs quantum
 
-    palette = ['#3E96A1', '#EC4E20', '#FF9505', '#713E5A']
+    palette = ['#3E96A1', '#EC4E20', '#FF9505', '#713E5A', '#9E0059']
     styles = ['solid', 'dashed', 'dotted'][:line_type_n]# 2 styles for classic vs quantum times number of signals
 
     aucs = []

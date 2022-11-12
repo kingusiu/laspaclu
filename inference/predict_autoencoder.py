@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-import data.data_sample as dasa
+import laspaclu.data.data_sample as dasa
 
 
 def map_to_latent_space(data_sample, model, read_n=int(1e5)) -> np.ndarray: # [N x Z]

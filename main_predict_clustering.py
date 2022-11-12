@@ -37,10 +37,9 @@ def combine_loss_min(loss):
 #****************************************#
 
 mG = 3500
-Parameters = namedtuple('Parameters', 'run_n latent_dim date_model ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
+Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
 params = Parameters(run_n=32, 
                     latent_dim=16,
-                    date_model='20220512', #'20220209'
                     ae_run_n=50, 
                     read_n=int(2e4), # test on 20K events in 10 fold 
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
@@ -71,7 +70,7 @@ logger.info('\n'+'*'*70+'\n'+'\t\t\t PREDICTION RUN \n'+str(params)+'\n'+'*'*70)
 
 if params.cluster_alg == 'kmeans':
 
-    model_path_km = pers.make_model_path(date=params.date_model, prefix='KM', run_n=params.run_n)
+    model_path_km = pers.make_model_path(prefix='KM', run_n=params.run_n)
     logger.info('loading clustering model ' + model_path_km)
 
     cluster_model = jli.load(model_path_km+'.joblib')    
@@ -97,7 +96,7 @@ else:
 #****************************************#
 
 logger.info('loading qmeans')
-model_path_qm = pers.make_model_path(date=params.date_model, prefix='QM', run_n=params.run_n) + '.npy'
+model_path_qm = pers.make_model_path(prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'rb') as f:
     cluster_q_centers = np.load(f)
 logger.info('quantum cluster centers: ')

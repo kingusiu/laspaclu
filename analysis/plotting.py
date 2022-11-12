@@ -71,12 +71,12 @@ def plot_latent_space_2D(latent_coords, title_suffix="data", filename_suffix="da
 
 def plot_latent_space_1D_bg_vs_sig(latent_bg, latent_sig, sample_names, fig_dir='fig'):
     
-    feature_names = [r'$z_' + str(d+1) +'$' for d in range(latent_bg.shape[1])]
+    feature_names = [r'$z_{' + str(d+1) +'}$' for d in range(latent_bg.shape[1])]
     plot_name_suffix = '_'.join([s for s in sample_names])
     suptitle = 'latent space distributions BG vs SIG'
     plot_name = '_'.join(['latent_space_1D_hist', plot_name_suffix])
 
-    plut.plot_m_features_for_n_samples([latent_bg.T, latent_sig.T], feature_names, sample_names, plot_name=plot_name, fig_dir=fig_dir, fig_size=(12,12), bg_name='qcd')
+    plut.plot_m_features_for_n_samples([latent_bg.T, latent_sig.T], feature_names, sample_names, plot_name=plot_name, fig_dir=fig_dir, fig_size=(14,14), bg_name='qcd')
 
 
 def plot_latent_space_2D_bg_vs_sig(latent_bg, latent_sig, title_suffix=None, filename_suffix=None, fig_dir='fig', contour_labels=False):
@@ -137,7 +137,7 @@ def plot_clusters(latent_coords, cluster_assignemnts, cluster_centers=None, titl
         ax.scatter(latent_coords[:,d], latent_coords[:,d+1], c=cluster_assignemnts, s=1.5, cmap='tab10')
         ax.set_title('dims {} & {}'.format(d+1, d+2), fontsize='small')
         if cluster_centers is not None:
-            ax.scatter(cluster_centers[:, d], cluster_centers[:, d+1], c='black', s=100, alpha=0.5);
+            ax.scatter(cluster_centers[:, d], cluster_centers[:, d+1], c='black', s=100, alpha=0.7);
 
     if axs.size > latent_dim_n/2:
         for a in axs.flat[int(latent_dim_n/2):]: a.axis('off')
@@ -150,12 +150,14 @@ def plot_clusters(latent_coords, cluster_assignemnts, cluster_centers=None, titl
 
 def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, filename_suffix=None, fig_dir='fig'):
 
+    palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
     sns.set_style(hep.style.CMS)
+    N = len(latent_coords)
 
     df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
     df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
 
-    plot = sns.pairplot(df, hue='assign', plot_kws=dict(alpha=0.7), palette=['#872657', '#009B77', '#0C090A', '#0C090A'])
+    plot = sns.pairplot(df, hue='assign', plot_kws=dict(alpha=0.8, s=[7]*N+[70]*2), diag_kws=dict(fill=False, lw=1.5), palette=palette)
 
     # replace labels
     new_labels = ['assigned 1', 'assigned 2', 'center 1', 'center 2']
