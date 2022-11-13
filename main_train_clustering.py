@@ -5,6 +5,7 @@ import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import tensorflow as tf
 import joblib as jli
+import pathlib
 from qiskit.utils import algorithm_globals
 
 import pofah.jet_sample as jesa
@@ -22,10 +23,10 @@ import util.logging as log
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg normalize quantum_min rtol mjj_center raw_format')
-params = Parameters(run_n=36,
+params = Parameters(run_n=38,
                     ae_run_n=50,
-                    lat_dim=16,
-                    read_n=int(6000),
+                    lat_dim=4,
+                    read_n=int(60),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     normalize=False,
@@ -63,9 +64,9 @@ if params.cluster_alg == 'kmeans':
 
     model_path = pers.make_model_path(prefix='KM', run_n=params.run_n)
 
-    print('>>> training kmeans')
+    logger.info('>>> training kmeans')
     cluster_model = cluster.train_kmeans(latent_coords_qcd)
-    print('[main_train_clustering] >>> centers {}'.format(cluster_model.cluster_centers_))
+    logger.info('>>> centers {}'.format(cluster_model.cluster_centers_))
 
     
 
@@ -76,11 +77,11 @@ else:
 
     model_path = pers.make_model_path(prefix='SVM', run_n=params.run_n)
 
-    print('>>> training one class svm')
+    logger.info('>>> training one class svm')
     cluster_model = cluster.train_one_class_svm(latent_coords_qcd)
 
 # save
-print('>>> saving classic clustering model to ' + model_path)
+logger.info('>>> saving classic clustering model to ' + model_path)
 jli.dump(cluster_model, model_path+'.joblib') 
 
 
@@ -91,9 +92,12 @@ jli.dump(cluster_model, model_path+'.joblib')
 ## train quantum kmeans
 
 print('>>> training qmeans')
-cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min, rtol=params.rtol)
+#cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min, rtol=params.rtol)
+gif_dir = 'gif/qkmeans_run_'+str(int(params.run_n))
+pathlib.Path(gif_dir).mkdir(parents=True, exist_ok=True)
+cluster_q_centers = cluster_q.train_qmeans_animated(latent_coords_qcd, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=10, gif_dir=gif_dir)
 
 model_path_qm = pers.make_model_path(prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'wb') as f:
-    print('>>> saving qmeans model to ' + model_path_qm)
+    logger.info('>>> saving qmeans model to ' + model_path_qm)
     np.save(f, cluster_q_centers)

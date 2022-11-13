@@ -148,7 +148,7 @@ def plot_clusters(latent_coords, cluster_assignemnts, cluster_centers=None, titl
     plt.close(fig)
 
 
-def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, filename_suffix=None, fig_dir='fig'):
+def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, filename_suffix=None, fig_dir=None):
 
     palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
     sns.set_style(hep.style.CMS)
@@ -166,7 +166,8 @@ def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, 
 
     sns.move_legend(plot, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=4, labelspacing=0.8, fontsize=16, title='Cluster')
     plt.tight_layout()
-    plot.savefig(fig_dir+'/cluster_assignments_'+filename_suffix+'.png')
+    if fig_dir is not None:
+        plot.savefig(fig_dir+'/cluster_assignments_'+filename_suffix+'.png')
 
 
 # not obvious to plot 6D decision boundary in 2D => currently not working!

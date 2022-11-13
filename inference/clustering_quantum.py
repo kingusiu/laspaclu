@@ -2,6 +2,11 @@ import numpy as np
 import util.logging as log
 import quantum.dist_calc as dica
 import quantum.minimization as mini
+import laspaclu.analysis.plotting as plot
+import pandas as pd
+import seaborn as sns
+import matplotlib.animation as animation
+
 
 
 # logging config
@@ -48,7 +53,98 @@ def assign_clusters(data, cluster_centers, quantum_min=True):
     return np.asarray(cluster_assignments), np.asarray(distances) 
 
 
-def train_qmeans(data, n_clusters=2, quantum_min=True, rtol=1e-2):
+def create_animated_figure(latent_coords, cluster_assignments, cluster_centers):
+    palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
+    N = len(latent_coords)
+    df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
+    df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+    gg = sns.PairGrid(df,hue='assign')
+    gg.map_offdiag(sns.scatterplot, palette=palette, alpha=0.6, size=[10]*N+[100]*2, markers='s', ec='face')
+    gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False)
+    return gg
+
+
+def create_animate(gg,N):
+    palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
+    def animate(data):
+        latent_coords, cluster_assignments, cluster_centers = data
+        df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
+        df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+        for ax in gg.axes.flat:
+          ax.clear()
+        for ax in gg.diag_axes:
+            ax.clear()
+        gg.data = df
+        gg.map_offdiag(sns.scatterplot, palette=palette, alpha=0.6, size=[10]*N+[100]*2, markers='s', ec='face')
+        gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False)
+    return animate
+
+
+def create_train_step_generator(data, n_clusters, rtol, max_iter=30):
+
+    def yield_next_training_result():
+        
+        """
+            train quantum k-means 
+            :param data: input array of shape [N x Z] where N .. number of samples, Z .. dimension of latent space
+            :return: np.ndarray of cluster centers
+        """
+
+
+        # init cluster centers randomly
+        idx = np.random.choice(len(data), size=n_clusters, replace=False)
+        cluster_centers = data[idx]
+
+        # loop until convergence
+        i = 0
+        while True:
+
+            if i > max_iter: break
+
+            cluster_assignments, _ = assign_clusters(data, cluster_centers, quantum_min=True)
+
+            new_centers = calc_new_cluster_centers(data, cluster_assignments)
+            logger.info('>>> iter {}: new centers {}'.format(i,new_centers))
+            i = i+1
+
+            if np.allclose(new_centers, cluster_centers, rtol=rtol):
+                break
+
+            cluster_centers = new_centers
+            yield data, cluster_assignments, cluster_centers
+
+        logger.info('>>> cluster centers converged')
+        print(cluster_centers)
+        return cluster_centers
+
+    return yield_next_training_result
+
+
+
+def train_qmeans_animated(data, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=30, gif_dir='gif'):
+    
+    # init cluster centers randomly
+    idx = np.random.choice(len(data), size=n_clusters, replace=False)
+    cluster_centers = data[idx]
+    cluster_assignments, _ = assign_clusters(data, cluster_centers, quantum_min=quantum_min)
+
+    N = len(data)
+
+    gg = create_animated_figure(data, cluster_assignments, cluster_centers)
+    frame_fun = create_train_step_generator(data, n_clusters, rtol, max_iter=max_iter)
+    animate_fun = create_animate(gg,N)
+
+    animObj = animation.FuncAnimation(gg.figure, animate_fun, frames=frame_fun, repeat=True, interval=300)
+
+    ff = gif_dir+'/animated_training.gif'
+    logger.info('saving training gif to '+ff)
+    writergif = animation.PillowWriter(fps=30) 
+    animObj.save(ff, writer=writergif)
+
+    return next(frame_fun) # return last cluster_centers
+
+
+def train_qmeans(data, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=200):
     """
         train quantum k-means 
         :param data: input array of shape [N x Z] where N .. number of samples, Z .. dimension of latent space
@@ -63,6 +159,8 @@ def train_qmeans(data, n_clusters=2, quantum_min=True, rtol=1e-2):
     # loop until convergence
     i = 0
     while True:
+
+        if i > max_iter: break
 
         cluster_assignments, _ = assign_clusters(data, cluster_centers, quantum_min=quantum_min)
 
