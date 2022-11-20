@@ -235,6 +235,20 @@ if do_generator_gif:
                 yield (cluster_assigns, self.cluster_centers, i-1)
 
 
+    class TrainingAnimator():
+
+        def __init__(self, latent_coords, cluster_assigns, cluster_centers_ini):
+            
+            N = len(latent_coords)
+            self.feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords.shape[1])]
+            df = pd.DataFrame(latent_coords, columns=self.feat_names).append(pd.DataFrame(cluster_centers_ini,columns=self.feat_names), ignore_index=True)
+            df['assigned_cluster'] = np.append(cluster_assigns, [3, 4]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+
+            self.palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
+            
+            self.gg = sns.PairGrid(df,hue='assigned_cluster')
+            self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.75, size=[10]*N+[100]*2, markers=['.'], ec='face')
+            self.gg.map_diag(sns.kdeplot, palette=self.palette, warn_singular=False)
     
 
     def clear_axes(gg):
@@ -280,18 +294,11 @@ if do_generator_gif:
         # init cluster centers randomly
         idx = np.random.choice(len(latent_coords_qcd), size=params.cluster_n, replace=False)
         cluster_centers_ini = latent_coords_qcd[idx]
-        feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords_qcd.shape[1])]
-        df = pd.DataFrame(latent_coords_qcd, columns=feat_names).append(pd.DataFrame(cluster_centers_ini,columns=feat_names), ignore_index=True)
-        df['assigned_cluster'] = np.append(cluster_assignments, [3, 4]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
-
-        palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
-        gg = sns.PairGrid(df,hue='assigned_cluster')
-        gg.map_offdiag(sns.scatterplot, palette=palette, alpha=0.75, size=[10]*N+[100]*2, markers=['.'], ec='face')
-        gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False)
-
-        animate_fun = make_animate(gg, palette, latent_coords_qcd)
+        
+        animator = TrainingAnimator(latent_coords_qcd, cluster_assignments, cluster_centers_ini)
+        animate_fun = make_animate(animator.gg, animator.palette, latent_coords_qcd)
         trainer = ClusterTraining(latent_coords_qcd, max_iter=6)
-        animObj = animation.FuncAnimation(gg.figure, animate_fun, frames=trainer.yield_next_step(cluster_centers_ini), repeat=False, interval=200, blit=True)
+        animObj = animation.FuncAnimation(animator.gg.figure, animate_fun, frames=trainer.yield_next_step(cluster_centers_ini), repeat=False, interval=200, blit=True)
 
         ff = gif_dir+'/animated_training_generator.gif'
         logger.info('saving training gif to '+ff)
