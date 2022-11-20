@@ -6,17 +6,19 @@ import laspaclu.analysis.plotting as plot
 import pandas as pd
 import seaborn as sns
 import matplotlib.animation as animation
+from typing import List, Tuple, Generator
+from collections.abc import Callable
 
 
 
 # logging config
 logger = log.get_logger(__name__)
 
-def calc_new_cluster_centers(data, cluster_assignments, n_clusters=2):
+def calc_new_cluster_centers(data, cluster_assignments, n_clusters=2) -> np.ndarray:
     return np.array([data[cluster_assignments == i].mean(axis=0) for i in range(n_clusters)])
 
 
-def quantum_distance_to_centers(sample, cluster_centers):
+def quantum_distance_to_centers(sample, cluster_centers) -> List:
 
     """
         computes |a-b|**2
@@ -34,7 +36,7 @@ def quantum_distance_to_centers(sample, cluster_centers):
     return distances
 
 
-def assign_clusters(data, cluster_centers, quantum_min=True):
+def assign_clusters(data, cluster_centers, quantum_min=True) -> Tuple[np.ndarray,np.ndarray]:
 
     cluster_assignments = []
     distances = []
@@ -53,7 +55,7 @@ def assign_clusters(data, cluster_centers, quantum_min=True):
     return np.asarray(cluster_assignments), np.asarray(distances) 
 
 
-def create_animated_figure(latent_coords, cluster_assignments, cluster_centers):
+def create_animated_figure(latent_coords, cluster_assignments, cluster_centers) -> sns.PairGrid:
     palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
     N = len(latent_coords)
     df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
@@ -64,7 +66,7 @@ def create_animated_figure(latent_coords, cluster_assignments, cluster_centers):
     return gg
 
 
-def create_animate(gg,N,latent_coords):
+def create_animate(gg,N,latent_coords) -> Callable:
 
     palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
 
@@ -85,7 +87,7 @@ def create_animate(gg,N,latent_coords):
     return animate
 
 
-def yield_next_training_result(latent_coords, cluster_centers_ini, n_clusters, rtol, max_iter=30): # returns generator
+def yield_next_training_result(latent_coords, cluster_centers_ini, n_clusters, rtol, max_iter=30) -> Generator: # returns generator
         
         """
             train quantum k-means 
