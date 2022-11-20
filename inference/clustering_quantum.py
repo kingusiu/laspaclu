@@ -85,7 +85,7 @@ def create_animate(gg,N,latent_coords):
     return animate
 
 
-def yield_next_training_result(latent_coords, n_clusters, rtol, max_iter=30):
+def yield_next_training_result(latent_coords, cluster_centers_ini, n_clusters, rtol, max_iter=30): # returns generator
         
         """
             train quantum k-means 
@@ -122,40 +122,40 @@ def yield_next_training_result(latent_coords, n_clusters, rtol, max_iter=30):
         logger.info('>>> final cluster centers')
         logger.info(cluster_centers)
 
-        yield cluster_centers
+        return cluster_centers
 
 
 class TrainStepGenerator():
 
-    def __init__(latent_coords, n_clusters, rtol, max_iter=30):
+    def __init__(self, latent_coords, n_clusters, rtol, max_iter=30):
         self.gen = yield_next_training_result(latent_coords, n_clusters, rtol, max_iter)
 
-    def __iter__():
-        self.current_state = yield from self.gen
+    def __iter__(self):
+        yield from self.gen
+        # self.current_state = yield from self.gen
+        # return self.current_state
     
 
 
-def train_qmeans_animated(data, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=30, gif_dir='gif'):
+def train_qmeans_animated(data, cluster_centers_ini, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=30, gif_dir='gif'):
     
-    # init cluster centers randomly
-    idx = np.random.choice(len(data), size=n_clusters, replace=False)
-    cluster_centers = data[idx]
-    cluster_assignments, _ = assign_clusters(data, cluster_centers, quantum_min=quantum_min)
+    cluster_assignments, _ = assign_clusters(data, cluster_centers_ini, quantum_min=quantum_min)
 
     N = len(data)
 
-    gg = create_animated_figure(data, cluster_assignments, cluster_centers)
-    frame_fun = TrainStepGenerator(data, n_clusters, rtol, max_iter=max_iter)
-    animate_fun = create_animate(gg,N)
+    gg = create_animated_figure(data, cluster_assignments, cluster_centers_ini)
+    # frame_fun = TrainStepGenerator(data, n_clusters, rtol, max_iter=max_iter)
+    frame_fun = yield_next_training_result(data, cluster_centers_ini, n_clusters, rtol, max_iter=max_iter)
+    animate_fun = create_animate(gg, N, data)
 
     animObj = animation.FuncAnimation(gg.figure, animate_fun, frames=frame_fun, repeat=True, interval=300)
 
     ff = gif_dir+'/animated_training.gif'
     logger.info('saving training gif to '+ff)
-    writergif = animation.PillowWriter(fps=30) 
+    writergif = animation.PillowWriter(fps=10) 
     animObj.save(ff, writer=writergif)
 
-    return frame_fun.current_state # return last cluster_centers
+    return frame_fun.cluster_centers # return last cluster_centers
 
 
 
