@@ -176,7 +176,7 @@ if do_generator_gif:
         return old_centers+(np.random.random(size=(2,1))-0.5)*0.2
 
 
-    class ClusterAnimation():
+    class ClusterAnimationXX():
 
         def __init__(self,latent_coords,gg,palette):
             self.latent_coords = latent_coords
@@ -191,9 +191,7 @@ if do_generator_gif:
                 cluster_centers = calc_new_centers(self.latent_coords, cluster_assigns)
                 i += 1
                 yield (cluster_assigns, cluster_centers, i-1)
-                # df.iloc[-2:,:-1] = cluster_centers_i
-                # df.iloc[:-2,-1] = cluster_assigns_i
-                # yield (df, i)
+
 
         def clear_axes(self,gg):
             for ax in gg.axes.flat:
@@ -217,6 +215,28 @@ if do_generator_gif:
 
 
 
+
+
+
+
+    class ClusterTraining():
+
+        def __init__(self,latent_coords,max_iter=6):
+            self.latent_coords = latent_coords
+            self.max_iter = max_iter
+
+        def yield_next_step(self, cluster_centers_ini):
+            self.cluster_centers = cluster_centers_ini
+            i = 0
+            while i < self.max_iter:
+                cluster_assigns = assign_clusters(self.latent_coords, self.cluster_centers)
+                self.cluster_centers = calc_new_centers(self.latent_coords, cluster_assigns)
+                i += 1
+                yield (cluster_assigns, self.cluster_centers, i-1)
+
+
+    
+
     def clear_axes(gg):
         for ax in gg.axes.flat:
           ax.clear()
@@ -224,16 +244,6 @@ if do_generator_gif:
             ax.clear()
             ax.set_ylim((0,0.9))
             ax.get_yaxis().set_visible(False)
-
-
-    def make_animate_init(gg, palette, df):
-
-        def animate_init(data):
-            off_dd = gg.map_offdiag(sns.scatterplot, palette=palette, alpha=0.75, size=[10]*N+[100]*2, markers=['.'], ec='face')
-            dd = gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False)
-            return off_dd.figure, dd.figure
-
-        return animate_init
 
 
     def make_animate(gg, palette, latent_coords):
@@ -259,20 +269,7 @@ if do_generator_gif:
             return off_dd.figure, dd.figure
         
         return animate
-
-    def yield_next_step(latent_coords, cluster_centers, max_iter):
-
-        N = len(latent_coords)
-        i = 0
-        while i < max_iter:
-            cluster_assigns = assign_clusters(latent_coords, cluster_centers)
-            cluster_centers = calc_new_centers(latent_coords, cluster_assigns)
-            i += 1
-            yield (cluster_assigns, cluster_centers, i-1)
-            # df.iloc[-2:,:-1] = cluster_centers_i
-            # df.iloc[:-2,-1] = cluster_assigns_i
-            # yield (df, i)        
-
+      
 
 
     def clustering_sim():
@@ -293,14 +290,16 @@ if do_generator_gif:
         gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False)
 
         animate_fun = make_animate(gg, palette, latent_coords_qcd)
-        yield_next_step_gen = yield_next_step(latent_coords_qcd, cluster_centers_ini, max_iter=5)
-        animator = ClusterAnimation(latent_coords_qcd, gg, palette)
-        animObj = animation.FuncAnimation(gg.figure, animate_fun, frames=yield_next_step_gen, repeat=False, interval=200, blit=True)
+        trainer = ClusterTraining(latent_coords_qcd, max_iter=6)
+        animObj = animation.FuncAnimation(gg.figure, animate_fun, frames=trainer.yield_next_step(cluster_centers_ini), repeat=False, interval=200, blit=True)
 
         ff = gif_dir+'/animated_training_generator.gif'
         logger.info('saving training gif to '+ff)
         writergif = animation.PillowWriter(fps=3) 
         animObj.save(ff, writer=writergif)
+
+        logger.info('converged centers')
+        logger.info(trainer.cluster_centers)
 
 
     clustering_sim()
