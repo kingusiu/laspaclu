@@ -105,9 +105,15 @@ class TrainingAnimator():
 
         self.latent_coords = latent_coords
         self.N = len(latent_coords)
+        self.Z = latent_coords.shape[1]
         self.feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords.shape[1])]
         df = pd.DataFrame(latent_coords, columns=self.feat_names).append(pd.DataFrame(cluster_centers_ini,columns=self.feat_names), ignore_index=True)
         df['assigned_cluster'] = np.append(cluster_assigns, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+
+        # if Z > 20, decrease df by ~ 1/2
+        if self.Z > 20:
+            drop_idx = list(range(2,Z,2))
+            df = df.drop(drop_idx, axis=1)        
 
         self.palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
 
@@ -146,6 +152,10 @@ class TrainingAnimator():
 
         df = pd.DataFrame(self.latent_coords,columns=self.feat_names).append(pd.DataFrame(cluster_centers,columns=self.feat_names), ignore_index=True)
         df['assigned_cluster'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+        
+        if self.Z > 20:
+            drop_idx = list(range(2,Z,2))
+            df = df.drop(drop_idx, axis=1)     
 
         self.set_axes(self.gg)
         self.gg.data = df
