@@ -30,6 +30,11 @@ def combine_loss_min(loss):
 #           Runtime Params
 #****************************************#
 
+# inputs: latent space coordinates qcd & signals, kmeans model, qkmeans model
+# outputs: out_sample qcd & signal with latent coords, classic loss, quantum loss, classic cluster assignment, quantum cluster assignment
+
+### -------------------------------- ### 
+
 mG = 3500
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
 params = Parameters(run_n=41, 
@@ -127,10 +132,6 @@ for sample_id in params.sample_ids:
 
     cluster_assign = cluster_model.predict(latent_coords) # latent coords obtained from AE
 
-    logger.info('plotting classic cluster assignments')
-
-    plot.plot_clusters_pairplot(latent_coords, cluster_assign, cluster_centers, filename_suffix=params.cluster_alg+'_'+sample_id, fig_dir=fig_dir)
-
 
     #****************************************#
     #               METRIC
@@ -155,9 +156,7 @@ for sample_id in params.sample_ids:
     # apply clustering algo
     logger.info('applying quantum clustering model')
     cluster_assign_q, distances_q = cluster_q.assign_clusters(latent_coords, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of qcd train obtained from AE
-    logger.info('plotting quantum cluster assignments')
-    plot.plot_clusters_pairplot(latent_coords, cluster_assign_q, cluster_centers, filename_suffix='qmeans_'+str(params.run_n)+'_'+sample_id, fig_dir=fig_dir)
-
+   
     logger.info('computing quantum clustering metrics')
     metric_q = metr.compute_quantum_metric_score(distances_q, cluster_assign_q)
 

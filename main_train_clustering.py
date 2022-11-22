@@ -22,6 +22,12 @@ import util.logging as log
 #           Runtime Params
 #****************************************#
 
+
+# inputs: latent space coordinates qcd
+# outputs: k-means model, q-means model
+
+### -------------------------------- ### 
+
 Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg cluster_n, max_iter normalize quantum_min rtol mjj_center raw_format')
 params = Parameters(run_n=44,
                     ae_run_n=50,
