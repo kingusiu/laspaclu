@@ -8,6 +8,7 @@ import seaborn as sns
 import matplotlib.animation as animation
 from typing import List, Tuple, Generator
 from collections.abc import Callable
+import mplhep as hep
 
 
 
@@ -55,39 +56,14 @@ def assign_clusters(data, cluster_centers, quantum_min=True) -> Tuple[np.ndarray
     return np.asarray(cluster_assignments), np.asarray(distances) 
 
 
-def create_animated_figure(latent_coords, cluster_assignments, cluster_centers) -> sns.PairGrid:
-    palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
-    N = len(latent_coords)
-    df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
-    df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
-    gg = sns.PairGrid(df,hue='assign')
-    gg.map_offdiag(sns.scatterplot, palette=palette, alpha=0.6, size=[10]*N+[100]*2, markers='s', ec='face')
-    gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False)
-    return gg
+class ClusterTrainer():
 
+    def __init__(self, latent_coords, cluster_n, max_iter=6):
+        self.latent_coords = latent_coords
+        self.max_iter = max_iter
+        self.cluster_n = cluster_n
 
-def create_animate(gg,N,latent_coords) -> Callable:
-
-    palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
-
-    def animate(data):
-    
-        cluster_assignments, cluster_centers = data
-        df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
-        df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
-    
-        for ax in gg.axes.flat:
-          ax.clear()
-        for ax in gg.diag_axes:
-            ax.clear()
-        gg.data = df
-        gg.map_offdiag(sns.scatterplot, palette=palette, alpha=0.6, size=[10]*N+[100]*2, markers='s', ec='face')
-        gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False)
-    
-    return animate
-
-
-def yield_next_training_result(latent_coords, cluster_centers_ini, n_clusters, rtol, max_iter=30) -> Generator: # returns generator
+    def yield_next_step(self, cluster_centers_ini, rtol):
         
         """
             train quantum k-means 
@@ -95,69 +71,106 @@ def yield_next_training_result(latent_coords, cluster_centers_ini, n_clusters, r
             :return: np.ndarray of cluster centers
         """
 
-
-        # init cluster centers randomly
-        idx = np.random.choice(len(latent_coords), size=n_clusters, replace=False)
-        cluster_centers = latent_coords[idx]
+        self.cluster_centers = cluster_centers_ini
 
         # loop until convergence or max_iter
         i = 0
         while True:
 
-            if i > max_iter: 
+            if i > self.max_iter: 
                 logger.info('>>> maximal number of iterations {} reached'.format(i))
                 break
 
-            cluster_assignments, _ = assign_clusters(latent_coords, cluster_centers, quantum_min=True)
+            cluster_assignments, _ = assign_clusters(self.latent_coords, self.cluster_centers, quantum_min=True)
 
-            new_centers = calc_new_cluster_centers(latent_coords, cluster_assignments)
+            new_centers = calc_new_cluster_centers(self.latent_coords, cluster_assignments)
             logger.info('>>> iter {}: new centers {}'.format(i,new_centers))
             i = i+1
 
-            if np.allclose(new_centers, cluster_centers, rtol=rtol):
+            if np.allclose(new_centers, self.cluster_centers, rtol=rtol):
                 logger.info('>>> clustering converged')
                 break
 
-            cluster_centers = new_centers
-            yield cluster_assignments, cluster_centers
-
-        logger.info('>>> final cluster centers')
-        logger.info(cluster_centers)
-
-        return cluster_centers
+            self.cluster_centers = new_centers
+            yield (cluster_assignments, self.cluster_centers,i-1)
 
 
-class TrainStepGenerator():
 
-    def __init__(self, latent_coords, n_clusters, rtol, max_iter=30):
-        self.gen = yield_next_training_result(latent_coords, n_clusters, rtol, max_iter)
+class TrainingAnimator():
 
-    def __iter__(self):
-        yield from self.gen
-        # self.current_state = yield from self.gen
-        # return self.current_state
-    
+    def __init__(self, latent_coords, cluster_assigns, cluster_centers_ini):
+        
+        sns.set_style(hep.style.CMS)
+        sns.set_style({'axes.linewidth': 0.5})
+
+        self.latent_coords = latent_coords
+        self.N = len(latent_coords)
+        self.feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords.shape[1])]
+        df = pd.DataFrame(latent_coords, columns=self.feat_names).append(pd.DataFrame(cluster_centers_ini,columns=self.feat_names), ignore_index=True)
+        df['assigned_cluster'] = np.append(cluster_assigns, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+
+        self.palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
+
+        #import ipdb; ipdb.set_trace()
+        
+        self.gg = sns.PairGrid(df,hue='assigned_cluster')
+        self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.8, size=[12]*self.N+[120]*2, markers=['.'], ec='face')
+        self.gg.map_diag(sns.kdeplot, palette=self.palette, warn_singular=False)
+        self.set_axes(self.gg,clear=False)
 
 
-def train_qmeans_animated(data, cluster_centers_ini, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=30, gif_dir='gif'):
+    def set_axes(self,gg,clear=True):
+
+        for ax in gg.figure.axes:
+            if clear:
+                ax.clear()
+            ax.set_xlim((-1,1))
+            ax.set_ylim((-1,1))
+            ax.tick_params(labelsize=15)
+            ax.xaxis.label.set_size(18)
+            ax.yaxis.label.set_size(18)
+        for ax in gg.diag_axes:
+            if clear:
+                ax.clear()
+            ax.set_ylim((0,1.5))
+            ax.set_xlim((-1,1))   
+            ax.get_yaxis().set_visible(False)
+            ax.tick_params(labelsize=15)
+            ax.xaxis.label.set_size(18)
+            ax.yaxis.label.set_size(18)
+
+
+    def animate(self, data):
+
+        cluster_assignments, cluster_centers, i = data
+
+        df = pd.DataFrame(self.latent_coords,columns=self.feat_names).append(pd.DataFrame(cluster_centers,columns=self.feat_names), ignore_index=True)
+        df['assigned_cluster'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+
+        self.set_axes(self.gg)
+        self.gg.data = df
+        off_dd = self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.75, size=[10]*self.N+[100]*2, markers='s', ec='face')
+        dd = self.gg.map_diag(sns.kdeplot, palette=self.palette, warn_singular=False)
+        self.gg.figure.suptitle('iteration '+str(i), x=0.96, ha='right', fontsize=18) # y=1.02
+        self.gg.figure.subplots_adjust(top=0.94)
+        return off_dd.figure, dd.figure
+
+
+def train_qmeans_animated(data, cluster_centers_ini, cluster_n=2, quantum_min=True, rtol=1e-2, max_iter=30, gif_dir='gif'):
     
     cluster_assignments, _ = assign_clusters(data, cluster_centers_ini, quantum_min=quantum_min)
 
-    N = len(data)
+    animator = TrainingAnimator(data, cluster_assignments, cluster_centers_ini)
+    trainer = ClusterTrainer(data, cluster_n=cluster_n, max_iter=max_iter)
 
-    gg = create_animated_figure(data, cluster_assignments, cluster_centers_ini)
-    # frame_fun = TrainStepGenerator(data, n_clusters, rtol, max_iter=max_iter)
-    frame_fun = yield_next_training_result(data, cluster_centers_ini, n_clusters, rtol, max_iter=max_iter)
-    animate_fun = create_animate(gg, N, data)
-
-    animObj = animation.FuncAnimation(gg.figure, animate_fun, frames=frame_fun, repeat=True, interval=300)
+    animObj = animation.FuncAnimation(animator.gg.figure, animator.animate, frames=trainer.yield_next_step(cluster_centers_ini, rtol), repeat=False, interval=200, blit=True)
 
     ff = gif_dir+'/animated_training.gif'
     logger.info('saving training gif to '+ff)
-    writergif = animation.PillowWriter(fps=10) 
+    writergif = animation.PillowWriter(fps=3) 
     animObj.save(ff, writer=writergif)
 
-    return frame_fun.cluster_centers # return last cluster_centers
+    return trainer.cluster_centers # return last cluster_centers
 
 
 

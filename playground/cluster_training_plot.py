@@ -74,7 +74,7 @@ if do_test_plot:
 
     feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords_qcd.shape[1])]
     cluster_assignments = np.random.choice(range(1,3),size=N).astype('int32')
-    df = pd.DataFrame(latent_coords_qcd, columns=feat_names).append(pd.DataFrame(cluster_centers,columns=feat_names), ignore_index=True)
+    df = pd.DataFrame(latent_coords_qcd, columns=feat_names).append(pd.DataFrame(cluster_centers, columns=feat_names), ignore_index=True)
     df['assigned_cluster'] = np.append(cluster_assignments, [3, 4]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
     #df = df.assign(Cluster=df.assigned_cluster.map({1:'assigned 1', 2:'assigned 2', 3:'center 1', 4:'center 2'})).drop('assigned_cluster',axis='columns',inplace=True) # replace labels for legend
     # import ipdb; ipdb.set_trace()

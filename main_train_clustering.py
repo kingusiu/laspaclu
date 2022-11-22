@@ -23,14 +23,14 @@ import util.logging as log
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg cluster_n, max_iter normalize quantum_min rtol mjj_center raw_format')
-params = Parameters(run_n=38,
+params = Parameters(run_n=44,
                     ae_run_n=50,
                     lat_dim=4,
-                    read_n=int(10),
+                    read_n=int(600),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     cluster_n=2,
-                    max_iter=10,
+                    max_iter=100,
                     normalize=False,
                     quantum_min=True,
                     rtol=1e-2,
@@ -101,7 +101,7 @@ print('>>> training qmeans')
 #cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min, rtol=params.rtol)
 gif_dir = 'gif/qkmeans_run_'+str(int(params.run_n))
 pathlib.Path(gif_dir).mkdir(parents=True, exist_ok=True)
-cluster_q_centers = cluster_q.train_qmeans_animated(latent_coords_qcd, cluster_centers_ini, n_clusters=params.cluster_n, quantum_min=True, rtol=1e-2, max_iter=params.max_iter, gif_dir=gif_dir)
+cluster_q_centers = cluster_q.train_qmeans_animated(latent_coords_qcd, cluster_centers_ini, cluster_n=params.cluster_n, quantum_min=True, rtol=1e-2, max_iter=params.max_iter, gif_dir=gif_dir)
 
 model_path_qm = pers.make_model_path(prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'wb') as f:

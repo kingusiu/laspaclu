@@ -24,8 +24,8 @@ import util.logging as log
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n, lat_dim read_n sample_ids raw_format')
-params = Parameters(run_n=35,
-                    lat_dim=4,
+params = Parameters(run_n=42,
+                    lat_dim=16,
                     read_n=int(1e3),
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'],
                     raw_format=True)
@@ -80,7 +80,7 @@ for sample_id in params.sample_ids:
     latent_coords_reshaped = np.stack(np.split(latent_coords, 2),axis=1) # reshape to N x 2 x z_dim
     sample_in = jesa.JetSampleLatent(name=sample_id, features=pd.DataFrame()).add_latent_representation(latent_coords_reshaped)
 
-    logger.info('read {} {} events'.format(len(latent_coords), sample_id))
+    logger.info('read {} {} jets'.format(len(latent_coords), sample_id))
 
     #****************************************#
     #          apply QUANTUM CLUSTERING
@@ -90,4 +90,4 @@ for sample_id in params.sample_ids:
     logger.info('applying quantum clustering model')
     cluster_assign_q, distances_q = cluster_q.assign_clusters(latent_coords, cluster_q_centers, quantum_min=True) # latent coords of qcd train obtained from AE
     logger.info('plotting quantum cluster assignments')
-    plot.plot_clusters_pairplot(latent_coords, cluster_assign_q, cluster_q_centers, filename_suffix='qmeans_cluster_assign_'+sample_id, fig_dir=fig_dir)
+    plot.plot_clusters_pairplot(latent_coords, cluster_assign_q, cluster_q_centers, filename_suffix='qmeans_'+str(params.run_n)+'_'+sample_id, fig_dir=fig_dir)

@@ -132,7 +132,7 @@ if var_sig:
 
 
 #****************************************#
-#               signal variation
+#               train size variation
 
 
 if var_train_sz:

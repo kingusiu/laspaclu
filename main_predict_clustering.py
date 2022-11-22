@@ -10,21 +10,15 @@ import joblib as jli
 import pathlib
 import pandas as pd
 
-import data.data_sample as dasa
-import inference.predict_autoencoder as pred
-import inference.clustering_quantum as cluster_q
-import inference.metrics as metr
-import analysis.plotting as plot
-import util.persistence as pers
-import anpofah.util.plotting_util as pu
-import anpofah.model_analysis.roc_analysis as roc
-import pofah.path_constants.sample_dict_file_parts_input as sdi
-import pofah.util.event_sample as evsa
+import laspaclu.inference.clustering_quantum as cluster_q
+import laspaclu.inference.metrics as metr
+import laspaclu.analysis.plotting as plot
+import laspaclu.util.persistence as pers
+import laspaclu.util.preprocessing as prep
+import laspaclu.util.logging as log
+import laspaclu.util.string_constants as stco
 import pofah.jet_sample as jesa
-import dadrah.selection.loss_strategy as losa
-import pofah.util.sample_factory as safa
-import util.preprocessing as prep
-import util.logging as log
+
 
 
 def combine_loss_min(loss):
@@ -38,10 +32,10 @@ def combine_loss_min(loss):
 
 mG = 3500
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
-params = Parameters(run_n=32, 
-                    latent_dim=16,
+params = Parameters(run_n=41, 
+                    latent_dim=8,
                     ae_run_n=50, 
-                    read_n=int(2e4), # test on 20K events in 10 fold 
+                    read_n=int(2e4), # test on 20K events in 10 fold (10x2000)
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     cluster_alg='kmeans', 
                     normalize=False,
@@ -49,12 +43,12 @@ params = Parameters(run_n=32,
                     raw_format=True)
 
 # path setup
-fig_dir = 'fig/run_'+str(params.run_n)
+fig_dir = 'fig/qkmeans_run_'+str(params.run_n)
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 # input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-input_dir = '/eos/home-e/epuljak/private/epuljak/public/diJet/'+str(params.latent_dim)
-output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
+input_dir = stco.cluster_in_data_dir+str(params.latent_dim)
+output_dir = stco.cluster_out_data_dir+'/run_'+str(params.run_n)
 pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 # logging
@@ -162,7 +156,7 @@ for sample_id in params.sample_ids:
     logger.info('applying quantum clustering model')
     cluster_assign_q, distances_q = cluster_q.assign_clusters(latent_coords, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of qcd train obtained from AE
     logger.info('plotting quantum cluster assignments')
-    plot.plot_clusters_pairplot(latent_coords, cluster_assign_q, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+sample_id, fig_dir=fig_dir)
+    plot.plot_clusters_pairplot(latent_coords, cluster_assign_q, cluster_centers, filename_suffix='qmeans_'+str(params.run_n)+'_'+sample_id, fig_dir=fig_dir)
 
     logger.info('computing quantum clustering metrics')
     metric_q = metr.compute_quantum_metric_score(distances_q, cluster_assign_q)
@@ -177,4 +171,6 @@ for sample_id in params.sample_ids:
     sample_out = jesa.JetSample.from_latent_jet_sample(sample_in)
     sample_out.add_feature('classic_loss', combine_loss_min(metric_c))
     sample_out.add_feature('quantum_loss', combine_loss_min(metric_q))
+    sample_out.add_feature('classic_assign', cluster_assign)
+    sample_out.add_feature('quantum_assign', cluster_assign_q)
     sample_out.dump(os.path.join(output_dir, sample_out.name+'.h5'))
