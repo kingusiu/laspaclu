@@ -173,7 +173,7 @@ for sample_id in params.sample_ids:
     #               WRITE RESULTS
     #****************************************#
 
-    sample_out = jesa.JetSample.from_latent_jet_sample(sample_in)
+    sample_out = sample_in.copy()
     sample_out.add_feature('classic_loss', combine_loss_min(metric_c))
     sample_out.add_feature('quantum_loss', combine_loss_min(metric_q))
     cluster_assign_j1, cluster_assign_j2 = np.split(cluster_assign, 2)
