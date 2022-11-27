@@ -194,7 +194,7 @@ def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, 
     plt.tight_layout()
     if fig_dir is not None:
         fig = plot.figure
-        fig.savefig(os.path.join(fig_dir,'cluster_assignments_'+filename_suffix+'.png'), bbox_inches="tight")
+        fig.savefig(os.path.join(fig_dir,'cluster_assignments_'+filename_suffix+'.png'), bbox_extra_artists=(plot._legend,), bbox_inches="tight")
 
 
 # not obvious to plot 6D decision boundary in 2D => currently not working!
@@ -227,9 +227,5 @@ def plot_svm_decision_boundary(model, latent_coords, cluster_assignemnts, title_
     plt.close(fig)
 
 
-
-def plot_loss_distributions():
-    
-    plt.style.use(hep.style.CMS)
 
 

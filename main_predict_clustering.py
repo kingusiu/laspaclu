@@ -21,6 +21,19 @@ import pofah.jet_sample as jesa
 
 
 
+#****************************************#
+#           Clustering prediction
+#****************************************#
+
+# task: for a sample x with latent coordinates in R^Z and a previously trained model M, find closest cluster c for x in M, calculate distance to c and store cluster assignment and distance-value in x_out
+# inputs: latent space coordinates qcd & signals, kmeans model, qkmeans model
+# outputs: out_sample qcd & signal with latent coords, classic loss, quantum loss, classic cluster assignment, quantum cluster assignment
+
+### --------------------------------- ### 
+
+
+
+
 def combine_loss_min(loss):
     loss_j1, loss_j2 = np.split(loss, 2)
     return np.minimum(loss_j1, loss_j2)
@@ -30,17 +43,12 @@ def combine_loss_min(loss):
 #           Runtime Params
 #****************************************#
 
-# inputs: latent space coordinates qcd & signals, kmeans model, qkmeans model
-# outputs: out_sample qcd & signal with latent coords, classic loss, quantum loss, classic cluster assignment, quantum cluster assignment
 
-### -------------------------------- ### 
-
-mG = 3500
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
-params = Parameters(run_n=41, 
-                    latent_dim=8,
+params = Parameters(run_n=46, 
+                    latent_dim=16,
                     ae_run_n=50, 
-                    read_n=int(2e4), # test on 20K events in 10 fold (10x2000)
+                    read_n=int(1e5), # test on 20K events in 10 fold (10x2000)
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     cluster_alg='kmeans', 
                     normalize=False,
@@ -165,11 +173,16 @@ for sample_id in params.sample_ids:
     #               WRITE RESULTS
     #****************************************#
 
-    logger.info('writing results to ' + output_dir)
-
     sample_out = jesa.JetSample.from_latent_jet_sample(sample_in)
     sample_out.add_feature('classic_loss', combine_loss_min(metric_c))
     sample_out.add_feature('quantum_loss', combine_loss_min(metric_q))
-    sample_out.add_feature('classic_assign', cluster_assign)
-    sample_out.add_feature('quantum_assign', cluster_assign_q)
-    sample_out.dump(os.path.join(output_dir, sample_out.name+'.h5'))
+    cluster_assign_j1, cluster_assign_j2 = np.split(cluster_assign, 2)
+    cluster_assign_q_j1, cluster_assign_q_j2 = np.split(cluster_assign_q, 2)
+    sample_out.add_feature('classic_assign_j1', cluster_assign_j1)
+    sample_out.add_feature('classic_assign_j2', cluster_assign_j2)
+    sample_out.add_feature('quantum_assign_j1', cluster_assign_q_j1)
+    sample_out.add_feature('quantum_assign_j2', cluster_assign_q_j2)
+    
+    sample_out_full_path = os.path.join(output_dir, sample_out.name+'.h5')
+    logger.info('writing results to ' + sample_out_full_path)
+    sample_out.dump(sample_out_full_path)

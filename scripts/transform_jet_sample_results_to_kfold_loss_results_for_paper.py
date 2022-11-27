@@ -12,6 +12,10 @@ import anpofah.model_analysis.roc_analysis as ra
 import util.logging as log
 import pofah.jet_sample as jesa
 
+# transforms jetsample format h5 file to other h5 file with format used for paper ROC plotting
+# input: JetSample object formatted h5 file (latent coords, losses, cluster assignments)
+# output: h5 file containing only classic and quantum losses of dimension kfold_n x N (loss calculated on both jets -> single value per sample)
+
 
 if __name__ == "__main__":
 

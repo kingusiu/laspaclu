@@ -110,17 +110,19 @@ class TrainingAnimator():
         df = pd.DataFrame(latent_coords, columns=self.feat_names).append(pd.DataFrame(cluster_centers_ini,columns=self.feat_names), ignore_index=True)
         df['assigned_cluster'] = np.append(cluster_assigns, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
 
-        # if Z > 20, decrease df by ~ 1/2
-        if self.Z > 20:
-            drop_idx = list(range(2,Z,2))
-            df = df.drop(drop_idx, axis=1)        
+        # if Z > 10, decrease df to O(10)
+        if self.Z > 10:
+            every_k = -(self.Z // -10) # ceil div
+            drop_idx = list(range(1,self.Z,every_k))
+            drop_cols = [j for i,j in enumerate(df.columns) if i in drop_idx]
+            df = df.drop(drop_cols, axis=1)        
 
         self.palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
 
         #import ipdb; ipdb.set_trace()
         
         self.gg = sns.PairGrid(df,hue='assigned_cluster')
-        self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.8, size=[12]*self.N+[120]*2, markers=['.'], ec='face')
+        self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.7, size=[12]*self.N+[120]*2, markers=['.'], ec='face')
         self.gg.map_diag(sns.kdeplot, palette=self.palette, warn_singular=False)
         self.set_axes(self.gg,clear=False)
 
@@ -138,7 +140,7 @@ class TrainingAnimator():
         for ax in gg.diag_axes:
             if clear:
                 ax.clear()
-            ax.set_ylim((0,1.5))
+            ax.set_ylim((0,1.7))
             ax.set_xlim((-1,1))   
             ax.get_yaxis().set_visible(False)
             ax.tick_params(labelsize=15)
@@ -150,16 +152,18 @@ class TrainingAnimator():
 
         cluster_assignments, cluster_centers, i = data
 
-        df = pd.DataFrame(self.latent_coords,columns=self.feat_names).append(pd.DataFrame(cluster_centers,columns=self.feat_names), ignore_index=True)
+        df = pd.DataFrame(self.latent_coords, columns=self.feat_names).append(pd.DataFrame(cluster_centers, columns=self.feat_names), ignore_index=True)
         df['assigned_cluster'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
-        
-        if self.Z > 20:
-            drop_idx = list(range(2,Z,2))
-            df = df.drop(drop_idx, axis=1)     
+
+        if self.Z > 10:
+            every_k = -(self.Z // -10) # ceil div
+            drop_idx = list(range(1,self.Z,every_k))
+            drop_cols = [j for i,j in enumerate(df.columns) if i in drop_idx]
+            df = df.drop(drop_cols, axis=1)       
 
         self.set_axes(self.gg)
         self.gg.data = df
-        off_dd = self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.75, size=[10]*self.N+[100]*2, markers='s', ec='face')
+        off_dd = self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.7, size=[10]*self.N+[100]*2, markers='s', ec='face')
         dd = self.gg.map_diag(sns.kdeplot, palette=self.palette, warn_singular=False)
         self.gg.figure.suptitle('iteration '+str(i), x=0.96, ha='right', fontsize=18) # y=1.02
         self.gg.figure.subplots_adjust(top=0.94)
