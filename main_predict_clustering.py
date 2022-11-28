@@ -45,10 +45,10 @@ def combine_loss_min(loss):
 
 
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
-params = Parameters(run_n=46, 
-                    latent_dim=16,
+params = Parameters(run_n=49, 
+                    latent_dim=8,
                     ae_run_n=50, 
-                    read_n=int(1e5), # test on 20K events in 10 fold (10x2000)
+                    read_n=int(1e3), # test on 100K events in 10 fold (10x10000) 1e5 
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     cluster_alg='kmeans', 
                     normalize=False,
@@ -172,6 +172,7 @@ for sample_id in params.sample_ids:
     #****************************************#
     #               WRITE RESULTS
     #****************************************#
+    #import ipdb; ipdb.set_trace()
 
     sample_out = sample_in.copy()
     sample_out.add_feature('classic_loss', combine_loss_min(metric_c))

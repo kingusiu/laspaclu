@@ -172,6 +172,7 @@ def set_axes(gg):
 
 def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, filename_suffix=None, fig_dir=None):
 
+    # import ipdb; ipdb.set_trace()
     palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
     sns.set_style(hep.style.CMS)
     sns.set_style({'axes.linewidth': 0.2})

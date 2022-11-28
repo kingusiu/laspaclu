@@ -6,6 +6,7 @@ import pathlib
 # cluster - in - data
 # cluster - out - data
 # cluster - out - models
+# cluster - out - results
 
 
 
@@ -26,6 +27,12 @@ pathlib.Path(cluster_out_data_dir).mkdir(parents=True, exist_ok=True)
 # *********************************************************** #
 
 
+# *********************************************************** #
+#                           OUT RESULTS                       #
+# *********************************************************** #
+
+cluster_out_fig_base_dir = 'results/fig'
+cluster_out_gif_base_dir = 'results/gif'
 
 
 # *********************************************************** #

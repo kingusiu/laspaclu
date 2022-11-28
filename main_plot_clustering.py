@@ -49,9 +49,17 @@ def plot_cluster_centers_classic_vs_quantum(centers_c, centers_q, plot_name, fig
     centroids = centroids.append(centroids_quantum, ignore_index=True)
     centroids['algorithm'] = ['classic']*2 +['quantum']*2
 
-    palette = ['#6C56B3', '#5AD871']
+    palette = ['#6C56B3', '#008F5F']
+    val = 0.8
 
-    gg = sns.pairplot(centroids, hue='algorithm', markers='X', plot_kws=dict(alpha=0.9, s=500), diag_kind="hist", diag_kws=dict(alpha=0.7, shrink=0.6, edgecolor=None), palette=palette)
+    #gg = sns.pairplot(centroids, hue='algorithm', markers='X', plot_kws=dict(alpha=0.9, s=500), diag_kind="hist", diag_kws=dict(alpha=0.7, shrink=0.6, edgecolor=None), palette=palette)
+
+    gg = sns.PairGrid(centroids,hue='algorithm',hue_kws={"edgecolor": palette})
+    gg.map_offdiag(plt.scatter, marker='*', facecolor="none", s=500, lw=2)
+    gg.map_diag(sns.kdeplot, palette=palette, warn_singular=False, lw=2)
+    gg.add_legend()
+    gg.set(xlim=(-val,val))
+    gg.set(ylim=(-val,val))
 
     for ax in gg.figure.axes:
         ax.tick_params(labelsize=15)
@@ -62,7 +70,7 @@ def plot_cluster_centers_classic_vs_quantum(centers_c, centers_q, plot_name, fig
         ax.xaxis.label.set_size(18)
         ax.yaxis.label.set_size(18)
 
-    sns.move_legend(gg, bbox_to_anchor=(0.44, -0.1), loc="lower center", ncol=2, labelspacing=0.8, fontsize=14, markerscale=2, title='Algorithm')
+    sns.move_legend(gg, bbox_to_anchor=(0.44, -0.1), loc="lower center", ncol=2, labelspacing=0.8, fontsize=16, markerscale=1, title='Algorithm')
     plt.tight_layout()
     fig_path = os.path.join(fig_dir, plot_name + fig_format)
     print('writing figure to ' + fig_path)
@@ -78,10 +86,10 @@ def plot_cluster_centers_classic_vs_quantum(centers_c, centers_q, plot_name, fig
 
 
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_id_qcd sample_id_sigs raw_format')
-params = Parameters(run_n=45, 
+params = Parameters(run_n=49, 
                     latent_dim=8,
                     ae_run_n=50, 
-                    read_n=int(2e4), # test on 20K events in 10 fold (10x2000)
+                    read_n=int(1e3), # test on 20K events in 10 fold (10x2000)
                     sample_id_qcd='qcdSigExt',
                     sample_id_sigs=['GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     raw_format=True)
@@ -107,7 +115,7 @@ plt.style.use(hep.style.CMS)
 #               READ DATA
 #****************************************#
 input_data_dir = stco.cluster_out_data_dir+'/run_'+str(params.run_n)
-
+# import ipdb; ipdb.set_trace()
 sample_qcd = jesa.JetSampleLatent.from_input_file(name=params.sample_id_qcd, path=input_data_dir+'/'+params.sample_id_qcd+'.h5').filter(slice(params.read_n))
 sample_sigs = {}
 for sample_id_sig in params.sample_id_sigs:
@@ -144,7 +152,6 @@ with open(model_path_qm, 'rb') as f:
     centers_q = np.load(f)
 logger.info('quantum cluster centers: ')
 logger.info(centers_q)
-
 
 
 #****************************************#
@@ -189,22 +196,22 @@ if do_cluster_assignments:
 
     # qcd
     latent_coords[params.sample_id_qcd] = pers.read_latent_representation(sample_qcd, shuffle=False)
-    assign_c[params.sample_id_qcd] = np.vstack((sample_qcd['classic_assign_j1'], sample_qcd['classic_assign_j2']))
-    assign_q[params.sample_id_qcd] = np.vstack((sample_qcd['quantum_assign_j1'], sample_qcd['quantum_assign_j2']))
+    assign_c[params.sample_id_qcd] = np.concatenate((sample_qcd['classic_assign_j1'], sample_qcd['classic_assign_j2']))
+    assign_q[params.sample_id_qcd] = np.concatenate((sample_qcd['quantum_assign_j1'], sample_qcd['quantum_assign_j2']))
     
     # signals
     for sample_id in params.sample_id_sigs:
 
         latent_coords[sample_id] = pers.read_latent_representation(sample_sigs[sample_id], shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
 
-        assign_c[sample_id] = np.vstack((sample_sigs[sample_id]['classic_assign_j1'], sample_sigs[sample_id]['classic_assign_j2']))
-        assign_q[sample_id] = np.vstack((sample_sigs[sample_id]['quantum_assign_j1'], sample_sigs[sample_id]['quantum_assign_j2']))
+        assign_c[sample_id] = np.concatenate((sample_sigs[sample_id]['classic_assign_j1'], sample_sigs[sample_id]['classic_assign_j2']))
+        assign_q[sample_id] = np.concatenate((sample_sigs[sample_id]['quantum_assign_j1'], sample_sigs[sample_id]['quantum_assign_j2']))
 
     # plot classic results
     for sample_id in [params.sample_id_qcd]+params.sample_id_sigs:
-        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_c[sample_id], cluster_centers_c, filename_suffix='cluster_assignments_classic_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
+        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_c[sample_id], centers_c, filename_suffix='cluster_assignments_classic_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
 
     # plot quantum results
     for sample_id in [params.sample_id_qcd]+params.sample_id_sigs:
-        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_q[sample_id], cluster_centers_q, filename_suffix='cluster_assignments_quantum_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
+        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_q[sample_id], centers_q, filename_suffix='cluster_assignments_quantum_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
 

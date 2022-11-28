@@ -65,17 +65,19 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
         
             # quantum data
             fq, tq = get_roc_data(quantum_loss_qcd[i][j], quantum_loss_sig[i][j])
-            fq = np.interp(base_tpr, tq, fq)
-            #fq[0] = 0.0
+            # fq = np.interp(base_tpr, tq, fq)
         
             # classic data
             fc, tc = get_roc_data(classic_loss_qcd[i][j], classic_loss_sig[i][j])
-            fc = np.interp(base_tpr, tc, fc)
-            #fc[0] = 0.0
+            # fc = np.interp(base_tpr, tc, fc)
 
-            auc_q.append(skl.auc(fq, base_tpr)); auc_c.append(skl.auc(fc, base_tpr))
+            auc_q.append(skl.auc(fq, tq)); auc_c.append(skl.auc(fc, tc))
             fpr_q.append(fq); fpr_c.append(fc)
-            tpr_q.append(base_tpr); tpr_c.append(base_tpr)
+            tpr_q.append(tq); tpr_c.append(tc)
+
+            # auc_q.append(skl.auc(fq, base_tpr)); auc_c.append(skl.auc(fc, base_tpr))
+            # fpr_q.append(fq); fpr_c.append(fc)
+            # tpr_q.append(base_tpr); tpr_c.append(base_tpr)
         
         auc_data_q = get_mean_and_error(np.array(auc_q))
         auc_data_c = get_mean_and_error(np.array(auc_c))
@@ -145,7 +147,7 @@ Parameters = namedtuple('Parameters', 'sample_id_qcd sample_id_sigs kfold_n read
 params = Parameters(sample_id_qcd='qcdSigExt',
                     sample_id_sigs=['GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     kfold_n=5,
-                    read_n=int(2e4))
+                    read_n=int(2e3))
 
 
 # logging
@@ -160,9 +162,9 @@ logger.info('\n'+'*'*70+'\n'+'\t\t\t PLOTING RUN \n'+str(params)+'\n'+'*'*70)
 #****************************************#
 #               READ DATA
 
-run_n = 42
-dim_z = 16
-train_n = 600
+run_n = 40
+dim_z = 4
+train_n = 10
 
 # path setup
 fig_dir = 'fig/paper_submission_plots'
@@ -186,7 +188,7 @@ for sample_id_sig in params.sample_id_sigs:
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
 # import ipdb; ipdb.set_trace()
-
+palette = ['forestgreen', '#EC4E20', 'darkorchid']
 legend_signal_names=['Narrow 'r'G $\to$ WW 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV']
 plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allSignals_run_'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)))
 

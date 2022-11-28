@@ -50,28 +50,29 @@ def train(data_sample, input_shape=(100,3), latent_dim=6, epochs=10, read_n=int(
     return model
 
 
+if __name__ == '__main__':
 
-#****************************************#
-#           Runtime Params
-#****************************************#
+    #****************************************#
+    #           Runtime Params
+    #****************************************#
 
-do_clustering = True
+    do_clustering = True
 
-Parameters = namedtuple('Parameters', 'run_n epochs latent_dim read_n sample_id_train cluster_alg act_latent')
-params = Parameters(run_n=50, epochs=200, latent_dim=8, read_n=int(1e6), sample_id_train='qcdSide', cluster_alg='kmeans', act_latent=tf.keras.activations.tanh)
+    Parameters = namedtuple('Parameters', 'run_n epochs latent_dim read_n sample_id_train cluster_alg act_latent')
+    params = Parameters(run_n=50, epochs=200, latent_dim=8, read_n=int(1e6), sample_id_train='qcdSide', cluster_alg='kmeans', act_latent=tf.keras.activations.tanh)
 
-model_path = pers.make_model_path(run_n=params.run_n, prefix='AE', mkdir=True)
-data_sample = dasa.DataSample(params.sample_id_train)
+    model_path = pers.make_model_path(run_n=params.run_n, prefix='AE', mkdir=True)
+    data_sample = dasa.DataSample(params.sample_id_train)
 
-#****************************************#
-#           Autoencoder
-#****************************************#
+    #****************************************#
+    #           Autoencoder
+    #****************************************#
 
-# train AE model
-print('>>> training autoencoder run ' + str(params.run_n))
-ae_model = train(data_sample, epochs=params.epochs, latent_dim=params.latent_dim, read_n=params.read_n, act_latent=params.act_latent)
+    # train AE model
+    print('>>> training autoencoder run ' + str(params.run_n))
+    ae_model = train(data_sample, epochs=params.epochs, latent_dim=params.latent_dim, read_n=params.read_n, act_latent=params.act_latent)
 
-# model save
-print('>>> saving autoencoder to ' + model_path)
-tf.saved_model.save(ae_model, model_path)
+    # model save
+    print('>>> saving autoencoder to ' + model_path)
+    tf.saved_model.save(ae_model, model_path)
 
