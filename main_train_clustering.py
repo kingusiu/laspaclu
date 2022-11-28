@@ -30,10 +30,10 @@ import laspaclu.util.string_constants as stco
 ### -------------------------------- ### 
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg cluster_n, max_iter normalize quantum_min rtol mjj_center raw_format')
-params = Parameters(run_n=50,
+params = Parameters(run_n=1,
                     ae_run_n=50,
-                    lat_dim=16,
-                    read_n=int(6000),
+                    lat_dim=4,
+                    read_n=int(20),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     cluster_n=2,
@@ -57,7 +57,7 @@ logger.info('\n'+'*'*60+'\n'+'\t\t\t TRAINING RUN \n'+str(params)+'\n'+'*'*60)
 #****************************************#
 
 # input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-input_dir = '/eos/home-e/epuljak/private/epuljak/public/diJet/'+str(int(params.lat_dim))
+input_dir = os.path.join(stco.cluster_in_data_dir,str(int(params.lat_dim)))
 latent_coords_qcd = pers.read_latent_rep_from_file(input_dir, sample_id=params.sample_id_train, read_n=params.read_n, raw_format=params.raw_format, shuffle=True, seed=seed)
 logger.info('read {} training samples ({} jets)'.format(len(latent_coords_qcd)/2, len(latent_coords_qcd))) # stacked j1 & j2
 
