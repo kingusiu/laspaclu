@@ -9,25 +9,25 @@ import pathlib
 from qiskit.utils import algorithm_globals
 
 import pofah.jet_sample as jesa
-import inference.clustering_classic as cluster
-import inference.clustering_quantum as cluster_q
-import inference.predict_autoencoder as pred
+import laspaclu.src.inference.clustering_classic as cluster
+import laspaclu.src.inference.clustering_quantum as cluster_q
+import laspaclu.src.inference.predict_autoencoder as pred
 import laspaclu.data.data_sample as dasa
-import util.persistence as pers
-import util.preprocessing as prep
-import util.logging as log
-import laspaclu.util.string_constants as stco
-
-
-#****************************************#
-#           Runtime Params
-#****************************************#
+import laspaclu.src.util.persistence as pers
+import laspaclu.src.util.preprocessing as prep
+import laspaclu.src.util.logging as log
+import laspaclu.src.util.string_constants as stco
 
 
 # inputs: latent space coordinates qcd
 # outputs: k-means model, q-means model
 
 ### -------------------------------- ### 
+
+
+#****************************************#
+#           Runtime Params
+#****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg cluster_n, max_iter normalize quantum_min rtol mjj_center raw_format')
 params = Parameters(run_n=1,
@@ -37,7 +37,7 @@ params = Parameters(run_n=1,
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     cluster_n=2,
-                    max_iter=100,
+                    max_iter=7,
                     normalize=False,
                     quantum_min=True,
                     rtol=1e-2,
@@ -95,7 +95,7 @@ else:
 
 # save
 logger.info('>>> saving classic clustering model to ' + model_path)
-jli.dump(cluster_model, model_path+'.joblib') 
+jli.dump(cluster_model, model_path+'.joblib')
 
 
 #****************************************#
@@ -106,7 +106,7 @@ jli.dump(cluster_model, model_path+'.joblib')
 
 logger.info('>>> training qmeans')
 
-gif_dir = os.path.join(stco.cluster_out_gif_base_dir,'qkmeans_run_'+str(int(params.run_n)))
+gif_dir = os.path.join(stco.reporting_gif_base_dir,'qkmeans_run_'+str(int(params.run_n)))
 pathlib.Path(gif_dir).mkdir(parents=True, exist_ok=True)
 
 #cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min, rtol=params.rtol)

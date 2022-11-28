@@ -45,10 +45,10 @@ def combine_loss_min(loss):
 
 
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
-params = Parameters(run_n=49, 
-                    latent_dim=8,
+params = Parameters(run_n=1, 
+                    latent_dim=4,
                     ae_run_n=50, 
-                    read_n=int(1e3), # test on 100K events in 10 fold (10x10000) 1e5 
+                    read_n=int(5e1), # test on 100K events in 10 fold (10x10000) 1e5 
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     cluster_alg='kmeans', 
                     normalize=False,
@@ -56,7 +56,7 @@ params = Parameters(run_n=49,
                     raw_format=True)
 
 # path setup
-fig_dir = 'fig/qkmeans_run_'+str(params.run_n)
+fig_dir = os.path.join(stco.reporting_fig_base_dir,'qkmeans_run_'+str(params.run_n))
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 # input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
