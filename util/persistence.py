@@ -4,11 +4,12 @@ import pathlib
 import h5py
 import numpy as np
 import pofah.jet_sample as jesa
+import laspaclu.uti.string_constants as stco
 
 
 def make_model_path(prefix='KM', run_n=0, mkdir=False):
 
-    path = os.path.join('models/saved', prefix+'model_run{}'.format(str(run_n)))
+    path = os.path.join(stco.cluster_out_model_dir, prefix+'model_run{}'.format(str(run_n)))
     if mkdir:
         pathlib.Path(path).mkdir(parents=True, exist_ok=True)
     return path

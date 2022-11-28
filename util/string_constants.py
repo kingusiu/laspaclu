@@ -26,6 +26,7 @@ pathlib.Path(cluster_out_data_dir).mkdir(parents=True, exist_ok=True)
 #                           OUT MODELS                        #
 # *********************************************************** #
 
+cluster_out_model_dir = 'results/model'
 
 # *********************************************************** #
 #                           OUT RESULTS                       #
