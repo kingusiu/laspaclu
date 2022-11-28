@@ -3,8 +3,8 @@ import math
 import numpy as np
 from qiskit import Aer, execute
 
-import quantum.oracles as ora
-import quantum.grover as gro
+import laspaclu.src.quantum.oracles as ora
+import laspaclu.src.quantum.grover as gro
 
 
 def measure_by_prob(counts, n):

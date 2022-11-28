@@ -3,16 +3,14 @@ from collections import namedtuple
 import numpy as np
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-import tensorflow as tf
 import joblib as jli
 import pathlib
 from qiskit.utils import algorithm_globals
 
 import pofah.jet_sample as jesa
-import laspaclu.src.inference.clustering_classic as cluster
-import laspaclu.src.inference.clustering_quantum as cluster_q
-import laspaclu.src.inference.predict_autoencoder as pred
-import laspaclu.data.data_sample as dasa
+import laspaclu.src.ml.clustering_classic as cluster
+import laspaclu.src.ml.clustering_quantum as cluster_q
+import laspaclu.src.data.data_sample as dasa
 import laspaclu.src.util.persistence as pers
 import laspaclu.src.util.preprocessing as prep
 import laspaclu.src.util.logging as log

@@ -10,13 +10,13 @@ import joblib as jli
 import pathlib
 import pandas as pd
 
-import laspaclu.inference.clustering_quantum as cluster_q
-import laspaclu.inference.metrics as metr
-import laspaclu.analysis.plotting as plot
-import laspaclu.util.persistence as pers
-import laspaclu.util.preprocessing as prep
-import laspaclu.util.logging as log
-import laspaclu.util.string_constants as stco
+import laspaclu.src.ml.clustering_quantum as cluster_q
+import laspaclu.src.ml.metrics as metr
+import laspaclu.src.analysis.plotting as plot
+import laspaclu.src.util.persistence as pers
+import laspaclu.src.util.preprocessing as prep
+import laspaclu.src.util.logging as log
+import laspaclu.src.util.string_constants as stco
 import pofah.jet_sample as jesa
 
 

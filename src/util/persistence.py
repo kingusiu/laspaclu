@@ -4,7 +4,7 @@ import pathlib
 import h5py
 import numpy as np
 import pofah.jet_sample as jesa
-import laspaclu.util.string_constants as stco
+import laspaclu.src.util.string_constants as stco
 
 
 def make_model_path(prefix='KM', run_n=0, mkdir=False):

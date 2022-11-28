@@ -1,8 +1,4 @@
 import numpy as np
-import util.logging as log
-import quantum.dist_calc as dica
-import quantum.minimization as mini
-import laspaclu.analysis.plotting as plot
 import pandas as pd
 import seaborn as sns
 import matplotlib.animation as animation
@@ -10,6 +6,10 @@ from typing import List, Tuple, Generator
 from collections.abc import Callable
 import mplhep as hep
 
+import laspaclu.src.util.logging as log
+import laspaclu.src.quantum.dist_calc as dica
+import laspaclu.src.quantum.minimization as mini
+import laspaclu.src.analysis.plotting as plot
 
 
 # logging config
