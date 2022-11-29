@@ -2,8 +2,11 @@ import anpofah.util.plotting_util as pu
 import anpofah.model_analysis.roc_analysis as roc
 import dadrah.selection.loss_strategy as losa
 import pofah.jet_sample as jesa
+import laspaclu.util.string_constants as stco
+
 
 from collections import namedtuple
+import pathlib
 
 
 sample_name_dict = {
@@ -18,12 +21,13 @@ mG = 3500
 Parameters = namedtuple('Parameters', 'run_n read_n sample_id_qcd sample_id_sig cluster_alg normalize n_train')
 params = Parameters(run_n=23, read_n=int(5e6), sample_id_qcd='qcdSigExt', sample_id_sig='GtoWW35na', cluster_alg='kmeans', \
     normalize=False, n_train=2e6)
-fig_dir = 'fig/run_'+str(params.run_n)
+fig_dir = 'fig/qkmeans_run_'+str(params.run_n)
+pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 #****************************************#
 #               READ DATA
 #****************************************#
-input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
+input_data_dir = stco.cluster_out_data_dir+'/run_'+str(params.run_n)
 
 sample_qcd = jesa.JetSample.from_input_file(name=params.sample_id_qcd, path=input_dir+'/'+params.sample_id_qcd+'.h5').cut(slice(params.read_n))
 sample_sig = jesa.JetSample.from_input_file(name=params.sample_id_sig, path=input_dir+'/'+params.sample_id_sig+'.h5').cut(slice(params.read_n))
