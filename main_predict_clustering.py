@@ -10,21 +10,28 @@ import joblib as jli
 import pathlib
 import pandas as pd
 
-import data.data_sample as dasa
-import inference.predict_autoencoder as pred
-import inference.clustering_quantum as cluster_q
-import inference.metrics as metr
-import analysis.plotting as plot
-import util.persistence as pers
-import anpofah.util.plotting_util as pu
-import anpofah.model_analysis.roc_analysis as roc
-import pofah.path_constants.sample_dict_file_parts_input as sdi
-import pofah.util.event_sample as evsa
+import laspaclu.src.ml.clustering_quantum as cluster_q
+import laspaclu.src.ml.metrics as metr
+import laspaclu.src.analysis.plotting as plot
+import laspaclu.src.util.persistence as pers
+import laspaclu.src.util.preprocessing as prep
+import laspaclu.src.util.logging as log
+import laspaclu.src.util.string_constants as stco
 import pofah.jet_sample as jesa
-import dadrah.selection.loss_strategy as losa
-import pofah.util.sample_factory as safa
-import util.preprocessing as prep
-import util.logging as log
+
+
+
+#****************************************#
+#           Clustering prediction
+#****************************************#
+
+# task: for a sample x with latent coordinates in R^Z and a previously trained model M, find closest cluster c for x in M, calculate distance to c and store cluster assignment and distance-value in x_out
+# inputs: latent space coordinates qcd & signals, kmeans model, qkmeans model
+# outputs: out_sample qcd & signal with latent coords, classic loss, quantum loss, classic cluster assignment, quantum cluster assignment
+
+### --------------------------------- ### 
+
+
 
 
 def combine_loss_min(loss):
@@ -36,12 +43,12 @@ def combine_loss_min(loss):
 #           Runtime Params
 #****************************************#
 
-mG = 3500
+
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
-params = Parameters(run_n=32, 
-                    latent_dim=16,
+params = Parameters(run_n=1, 
+                    latent_dim=4,
                     ae_run_n=50, 
-                    read_n=int(2e4), # test on 20K events in 10 fold 
+                    read_n=int(5e1), # test on 100K events in 10 fold (10x10000) 1e5 
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     cluster_alg='kmeans', 
                     normalize=False,
@@ -49,12 +56,12 @@ params = Parameters(run_n=32,
                     raw_format=True)
 
 # path setup
-fig_dir = 'fig/run_'+str(params.run_n)
+fig_dir = os.path.join(stco.reporting_fig_base_dir,'qkmeans_run_'+str(params.run_n))
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 # input_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/latent_rep/ae_run_"+str(params.ae_run_n)
-input_dir = '/eos/home-e/epuljak/private/epuljak/public/diJet/'+str(params.latent_dim)
-output_dir = "/eos/user/k/kiwoznia/data/laspaclu_results/run_"+str(params.run_n)
+input_dir = stco.cluster_in_data_dir+str(params.latent_dim)
+output_dir = stco.cluster_out_data_dir+'/run_'+str(params.run_n)
 pathlib.Path(output_dir).mkdir(parents=True, exist_ok=True)
 
 # logging
@@ -133,10 +140,6 @@ for sample_id in params.sample_ids:
 
     cluster_assign = cluster_model.predict(latent_coords) # latent coords obtained from AE
 
-    logger.info('plotting classic cluster assignments')
-
-    plot.plot_clusters_pairplot(latent_coords, cluster_assign, cluster_centers, filename_suffix=params.cluster_alg+'_'+sample_id, fig_dir=fig_dir)
-
 
     #****************************************#
     #               METRIC
@@ -161,9 +164,7 @@ for sample_id in params.sample_ids:
     # apply clustering algo
     logger.info('applying quantum clustering model')
     cluster_assign_q, distances_q = cluster_q.assign_clusters(latent_coords, cluster_q_centers, quantum_min=params.quantum_min) # latent coords of qcd train obtained from AE
-    logger.info('plotting quantum cluster assignments')
-    plot.plot_clusters_pairplot(latent_coords, cluster_assign_q, cluster_centers, filename_suffix='quantum_'+params.cluster_alg+'_'+sample_id, fig_dir=fig_dir)
-
+   
     logger.info('computing quantum clustering metrics')
     metric_q = metr.compute_quantum_metric_score(distances_q, cluster_assign_q)
 
@@ -171,10 +172,18 @@ for sample_id in params.sample_ids:
     #****************************************#
     #               WRITE RESULTS
     #****************************************#
+    #import ipdb; ipdb.set_trace()
 
-    logger.info('writing results to ' + output_dir)
-
-    sample_out = jesa.JetSample.from_latent_jet_sample(sample_in)
+    sample_out = sample_in.copy()
     sample_out.add_feature('classic_loss', combine_loss_min(metric_c))
     sample_out.add_feature('quantum_loss', combine_loss_min(metric_q))
-    sample_out.dump(os.path.join(output_dir, sample_out.name+'.h5'))
+    cluster_assign_j1, cluster_assign_j2 = np.split(cluster_assign, 2)
+    cluster_assign_q_j1, cluster_assign_q_j2 = np.split(cluster_assign_q, 2)
+    sample_out.add_feature('classic_assign_j1', cluster_assign_j1)
+    sample_out.add_feature('classic_assign_j2', cluster_assign_j2)
+    sample_out.add_feature('quantum_assign_j1', cluster_assign_q_j1)
+    sample_out.add_feature('quantum_assign_j2', cluster_assign_q_j2)
+    
+    sample_out_full_path = os.path.join(output_dir, sample_out.name+'.h5')
+    logger.info('writing results to ' + sample_out_full_path)
+    sample_out.dump(sample_out_full_path)

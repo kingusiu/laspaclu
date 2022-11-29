@@ -74,7 +74,7 @@ if do_test_plot:
 
     feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords_qcd.shape[1])]
     cluster_assignments = np.random.choice(range(1,3),size=N).astype('int32')
-    df = pd.DataFrame(latent_coords_qcd, columns=feat_names).append(pd.DataFrame(cluster_centers,columns=feat_names), ignore_index=True)
+    df = pd.DataFrame(latent_coords_qcd, columns=feat_names).append(pd.DataFrame(cluster_centers, columns=feat_names), ignore_index=True)
     df['assigned_cluster'] = np.append(cluster_assignments, [3, 4]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
     #df = df.assign(Cluster=df.assigned_cluster.map({1:'assigned 1', 2:'assigned 2', 3:'center 1', 4:'center 2'})).drop('assigned_cluster',axis='columns',inplace=True) # replace labels for legend
     # import ipdb; ipdb.set_trace()
@@ -166,9 +166,8 @@ do_generator_gif = True
 
 if do_generator_gif:
 
-    N=100
     Z=4 
-    def assign_clusters(latent_coords, cluster_centers):
+    def assign_clusters(latent_coords, cluster_centers,N):
         return np.random.choice(range(1,3),size=N).astype('int32')
 
     old_centers = np.random.random(size=(2,Z))
@@ -187,7 +186,7 @@ if do_generator_gif:
             N = len(self.latent_coords)
             i = 0
             while i < max_iter:
-                cluster_assigns = assign_clusters(self.latent_coords, cluster_centers)
+                cluster_assigns = assign_clusters(self.latent_coords, cluster_centers, N)
                 cluster_centers = calc_new_centers(self.latent_coords, cluster_assigns)
                 i += 1
                 yield (cluster_assigns, cluster_centers, i-1)
@@ -205,7 +204,7 @@ if do_generator_gif:
         def animate(self,data):
             cluster_assignments, cluster_centers, i = data
             df = pd.DataFrame(self.latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
-            df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+            df['assign'] = np.append(cluster_assignments, [3, 4]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
 
             self.clear_axes(self.gg)
             self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.75, size=[10]*N+[100]*2, markers='s', ec='face')
@@ -227,9 +226,10 @@ if do_generator_gif:
 
         def yield_next_step(self, cluster_centers_ini):
             self.cluster_centers = cluster_centers_ini
+            N = len(self.latent_coords)
             i = 0
             while i < self.max_iter:
-                cluster_assigns = assign_clusters(self.latent_coords, self.cluster_centers)
+                cluster_assigns = assign_clusters(self.latent_coords, self.cluster_centers, N)
                 self.cluster_centers = calc_new_centers(self.latent_coords, cluster_assigns)
                 i += 1
                 yield (cluster_assigns, self.cluster_centers, i-1)
@@ -245,6 +245,8 @@ if do_generator_gif:
             df['assigned_cluster'] = np.append(cluster_assigns, [3, 4]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
 
             self.palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
+
+            #import ipdb; ipdb.set_trace()
             
             self.gg = sns.PairGrid(df,hue='assigned_cluster')
             self.gg.map_offdiag(sns.scatterplot, palette=self.palette, alpha=0.75, size=[10]*N+[100]*2, markers=['.'], ec='face')
@@ -263,6 +265,7 @@ if do_generator_gif:
     def make_animate(gg, palette, latent_coords):
 
         feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords.shape[1])]
+        N = len(latent_coords)
 
         def animate(data):
 
@@ -272,7 +275,7 @@ if do_generator_gif:
             logger.info(cluster_centers)
 
             df = pd.DataFrame(latent_coords,columns=feat_names).append(pd.DataFrame(cluster_centers,columns=feat_names), ignore_index=True)
-            df['assigned_cluster'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
+            df['assigned_cluster'] = np.append(cluster_assignments, [3, 4]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
 
             clear_axes(gg)
             gg.data = df
@@ -288,6 +291,7 @@ if do_generator_gif:
 
     def clustering_sim():
 
+        N = 2
         # data
         latent_coords_qcd = np.random.random(size=(N,Z))
         cluster_assignments = np.random.choice(range(1,3),size=N).astype('int32')

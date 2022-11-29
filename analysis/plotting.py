@@ -148,26 +148,54 @@ def plot_clusters(latent_coords, cluster_assignemnts, cluster_centers=None, titl
     plt.close(fig)
 
 
+def set_axes(gg):
+
+    for ax in gg.figure.axes:
+        ax.set_xlim((-1,1))
+        ax.set_ylim((-1,1))
+        ax.tick_params(labelsize=13)
+        ax.xaxis.label.set_size(18)
+        ax.yaxis.label.set_size(18)
+        ax.spines['left'].set_linewidth(1.2)
+        ax.spines['bottom'].set_linewidth(1.2)
+        #plt.setp(ax.spines.values(), linewidth=1)
+    for ax in gg.diag_axes:
+        ax.set_ylim((0,1.7))
+        ax.set_xlim((-1,1))   
+        ax.get_yaxis().set_visible(False)
+        ax.tick_params(labelsize=13)
+        ax.xaxis.label.set_size(18)
+        ax.yaxis.label.set_size(18)
+        ax.spines['left'].set_linewidth(1.2)
+        ax.spines['bottom'].set_linewidth(1.2)
+        
+
 def plot_clusters_pairplot(latent_coords, cluster_assignments, cluster_centers, filename_suffix=None, fig_dir=None):
 
-    palette = ['#21A9CE', '#00DE7E', '#008CB3', '#00C670']
+    # import ipdb; ipdb.set_trace()
+    palette = ['#21A9CE', '#5AD871', '#0052A3', '#008F5F']
     sns.set_style(hep.style.CMS)
-    N = len(latent_coords)
+    sns.set_style({'axes.linewidth': 0.2})
 
-    df = pd.DataFrame(latent_coords).append(pd.DataFrame(cluster_centers), ignore_index=True)
+    N = len(latent_coords)
+    feat_names = [r"$z_{"+str(z+1)+"}$" for z in range(latent_coords.shape[1])]
+    df = pd.DataFrame(latent_coords,columns=feat_names).append(pd.DataFrame(cluster_centers,columns=feat_names), ignore_index=True)
     df['assign'] = np.append(cluster_assignments, [2, 3]) # add cluster assignemnts + dummy class 2 & 3 for cluster centers
 
-    plot = sns.pairplot(df, hue='assign', plot_kws=dict(alpha=0.8, s=[7]*N+[70]*2), diag_kws=dict(fill=False, lw=1.5), palette=palette)
+    plot = sns.pairplot(df, hue='assign', plot_kws=dict(alpha=0.75, s=[7]*N+[70]*2), diag_kws=dict(fill=False, lw=1.5), palette=palette)
+
+    set_axes(plot)
 
     # replace labels
     new_labels = ['assigned 1', 'assigned 2', 'center 1', 'center 2']
     for t, l in zip(plot._legend.texts, new_labels):
         t.set_text(l)
 
-    sns.move_legend(plot, bbox_to_anchor=(0.5,-0.1), loc="lower center", ncol=4, labelspacing=0.8, fontsize=16, title='Cluster')
+    sns.move_legend(plot, bbox_to_anchor=(0.5,-0.07), loc="lower center", ncol=4, labelspacing=0.8, fontsize=16, title='Cluster', title_fontsize=16, markerscale=1.2)
     plt.tight_layout()
     if fig_dir is not None:
-        plot.savefig(fig_dir+'/cluster_assignments_'+filename_suffix+'.png', bbox_inches="tight")
+        fig = plot.figure
+        fig.savefig(os.path.join(fig_dir,'cluster_assignments_'+filename_suffix+'.png'), bbox_extra_artists=(plot._legend,), bbox_inches="tight")
 
 
 # not obvious to plot 6D decision boundary in 2D => currently not working!
@@ -198,4 +226,7 @@ def plot_svm_decision_boundary(model, latent_coords, cluster_assignemnts, title_
     plt.tight_layout()
     fig.savefig(os.path.join(fig_dir, '_'.join(filter(None, ['kmeans_clusters', filename_suffix, '.png']))))
     plt.close(fig)
+
+
+
 
