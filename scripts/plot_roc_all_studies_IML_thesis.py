@@ -11,8 +11,7 @@ from collections import namedtuple
 import laspaclu.src.analysis.roc as roc
 import laspaclu.src.util.logging as log
 import pofah.jet_sample as jesa
-import anpofah.model_analysis.roc_analysis as ra
-
+import anpofah.model_analysis.roc_analysis as roan
 
 
 
@@ -21,83 +20,35 @@ if __name__ == "__main__":
 
 
     #****************************************#
-#           Runtime Params
-#****************************************#
+    #           Runtime Params
+    #****************************************#
 
 
-Parameters = namedtuple('Parameters', 'sample_id_qcd sample_id_sigs read_n')
-params = Parameters(sample_id_qcd='qcdSigExt',
-                    sample_id_sigs=['GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
-                    read_n=int(2e3))
+    Parameters = namedtuple('Parameters', 'sample_id_qcd sample_id_sigs read_n')
+    params = Parameters(sample_id_qcd='qcdSigExt',
+                        sample_id_sigs=['GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
+                        read_n=int(2e3))
 
 
-# logging
-logger = log.get_logger(__name__)
-logger.info('\n'+'*'*70+'\n'+'\t\t\t PLOTING RUN \n'+str(params)+'\n'+'*'*70)
+    # logging
+    logger = log.get_logger(__name__)
+    logger.info('\n'+'*'*70+'\n'+'\t\t\t PLOTING RUN \n'+str(params)+'\n'+'*'*70)
 
 
-#**********************************************************#
-#    PLOT ALL SIGNALS, FIXED DIM=8, FIXED-N=600 (run 45)
-#**********************************************************#
+    #**********************************************************#
+    #    PLOT ALL SIGNALS, FIXED DIM=8, FIXED-N=600 (run 45)
+    #**********************************************************#
 
-#****************************************#
-#               READ DATA
+    #****************************************#
+    #               READ DATA
 
-run_n = 45
-dim_z = 4
-train_n = 10
+    run_n = 45
+    dim_z = 4
+    train_n = 600
 
-# path setup
-fig_dir = os.path.join(stco.reporting_fig_base_dir,'qkmeans_run_'+str(params.run_n))
-pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
-
-input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-sample_qcd = jesa.JetSample.from_input_file(name=params.sample_id_qcd, path=input_data_dir+'/'+params.sample_id_qcd+'.h5').filter(slice(params.read_n))
-
-dist_qcd = sample_qcd['classic_loss'].reshape(params.kfold_n,-1)
-dist_q_qcd = sample_qcd['quantum_loss'].reshape(params.kfold_n,-1)
-
-ll_dist_c_qcd = []; ll_dist_q_qcd = []
-ll_dist_c_sigs = []; ll_dist_q_sigs = []
-for sample_id_sig in params.sample_id_sigs:
-    ll_dist_c_qcd.append(dist_qcd)
-    ll_dist_q_qcd.append(dist_q_qcd)
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-    ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
-    ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
-
-# import ipdb; ipdb.set_trace()
-palette = ['forestgreen', '#EC4E20', 'darkorchid']
-legend_signal_names=['Narrow 'r'G $\to$ WW 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV']
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allSignals_run_'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)))
-
-
-#**********************************************************#
-#    PLOT ALL LATENT DIMS, FIXED SIG=X, FIXED-N=600
-#**********************************************************#
-
-run_n_dict = {
-    4: 40,
-    8: 41,
-    16: 42,
-    32: 43
-}
-
-# path setup
-fig_dir = os.path.join(stco.reporting_fig_base_dir,'qkmeans_multimodel/runs_'+'_'.join([str(r) for r in run_n_dict.values()]))
-pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
-
-#****************************************#
-#               A to HZ
-
-
-sample_id_sig = 'AtoHZ35'
-
-ll_dist_c_qcd = []; ll_dist_q_qcd = []
-ll_dist_c_sigs = []; ll_dist_q_sigs = []
-
-for z_dim, run_n in run_n_dict.items():
+    # path setup
+    fig_dir = os.path.join(stco.reporting_fig_base_dir,'qkmeans_run_'+str(params.run_n))
+    pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
     input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
 
@@ -106,100 +57,148 @@ for z_dim, run_n in run_n_dict.items():
     dist_qcd = sample_qcd['classic_loss'].reshape(params.kfold_n,-1)
     dist_q_qcd = sample_qcd['quantum_loss'].reshape(params.kfold_n,-1)
 
-    ll_dist_c_qcd.append(dist_qcd)
-    ll_dist_q_qcd.append(dist_q_qcd)
+    ll_dist_c_qcd = []; ll_dist_q_qcd = []
+    ll_dist_c_sigs = []; ll_dist_q_sigs = []
+    for sample_id_sig in params.sample_id_sigs:
+        ll_dist_c_qcd.append(dist_qcd)
+        ll_dist_q_qcd.append(dist_q_qcd)
+        sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
+        ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
+        ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
-    ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
-
-
-legend_signal_names=['lat4', 'lat8', 'lat16', 'lat32']
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_trainN_'+str(int(train_n)))
-
-
-#****************************************#
-#               G_RS 3.5TeV
-
-sample_id_sig = 'GtoWW35na'
-
-ll_dist_c_sigs = []; ll_dist_q_sigs = []
-
-for z_dim, run_n in run_n_dict.items():
-
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
-    ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
+    # import ipdb; ipdb.set_trace()
+    palette = ['forestgreen', '#EC4E20', 'darkorchid']
+    legend_signal_names=['Narrow 'r'G $\to$ WW 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV']
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allSignals_run_'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)))
 
 
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_trainN_'+str(int(train_n)))
+    #**********************************************************#
+    #    PLOT ALL LATENT DIMS, FIXED SIG=X, FIXED-N=600
+    #**********************************************************#
+
+    run_n_dict = {
+        4: 40,
+        8: 41,
+        16: 42,
+        32: 43
+    }
+
+    # path setup
+    fig_dir = os.path.join(stco.reporting_fig_base_dir,'qkmeans_multimodel/runs_'+'_'.join([str(r) for r in run_n_dict.values()]))
+    pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
+
+    #****************************************#
+    #               A to HZ
 
 
-#**********************************************************#
-#    PLOT ALL Training sizes, FIXED SIG=X, FIXED-Z=8
-#**********************************************************#
+    sample_id_sig = 'AtoHZ35'
 
-run_n_dict = {
-    10: 40,
-    600: 44,
-    6000: 48,
-}
+    ll_dist_c_qcd = []; ll_dist_q_qcd = []
+    ll_dist_c_sigs = []; ll_dist_q_sigs = []
 
-dim_z = 4
+    for z_dim, run_n in run_n_dict.items():
 
-#****************************************#
-#               A to HZ
+        input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
 
+        sample_qcd = jesa.JetSample.from_input_file(name=params.sample_id_qcd, path=input_data_dir+'/'+params.sample_id_qcd+'.h5').filter(slice(params.read_n))
 
-sample_id_sig = 'AtoHZ35'
+        dist_qcd = sample_qcd['classic_loss'].reshape(params.kfold_n,-1)
+        dist_q_qcd = sample_qcd['quantum_loss'].reshape(params.kfold_n,-1)
 
-ll_dist_c_qcd = []; ll_dist_q_qcd = []
-ll_dist_c_sigs = []; ll_dist_q_sigs = []
+        ll_dist_c_qcd.append(dist_qcd)
+        ll_dist_q_qcd.append(dist_q_qcd)
 
-for z_dim, run_n in run_n_dict.items():
+        sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
 
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_qcd = jesa.JetSample.from_input_file(name=params.sample_id_qcd, path=input_data_dir+'/'+params.sample_id_qcd+'.h5').filter(slice(params.read_n))
-
-    dist_qcd = sample_qcd['classic_loss'].reshape(params.kfold_n,-1)
-    dist_q_qcd = sample_qcd['quantum_loss'].reshape(params.kfold_n,-1)
-
-    ll_dist_c_qcd.append(dist_qcd)
-    ll_dist_q_qcd.append(dist_q_qcd)
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
-    ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
+        ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
+        ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
 
-legend_signal_names=list(run_n_dict.keys())
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z))
+    legend_signal_names=['lat4', 'lat8', 'lat16', 'lat32']
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_trainN_'+str(int(train_n)))
 
 
-#****************************************#
-#               G_RS 3.5TeV
+    #****************************************#
+    #               G_RS 3.5TeV
 
-sample_id_sig = 'GtoWW35na'
+    sample_id_sig = 'GtoWW35na'
 
-ll_dist_c_sigs = []; ll_dist_q_sigs = []
+    ll_dist_c_sigs = []; ll_dist_q_sigs = []
 
-for z_dim, run_n in run_n_dict.items():
+    for z_dim, run_n in run_n_dict.items():
 
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
+        input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
 
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
+        sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
 
-    ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
-    ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
+        ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
+        ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
 
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z))
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_trainN_'+str(int(train_n)))
+
+
+    #**********************************************************#
+    #    PLOT ALL Training sizes, FIXED SIG=X, FIXED-Z=8
+    #**********************************************************#
+
+    run_n_dict = {
+        10: 40,
+        600: 44,
+        6000: 48,
+    }
+
+    dim_z = 4
+
+    #****************************************#
+    #               A to HZ
+
+
+    sample_id_sig = 'AtoHZ35'
+
+    ll_dist_c_qcd = []; ll_dist_q_qcd = []
+    ll_dist_c_sigs = []; ll_dist_q_sigs = []
+
+    for z_dim, run_n in run_n_dict.items():
+
+        input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
+
+        sample_qcd = jesa.JetSample.from_input_file(name=params.sample_id_qcd, path=input_data_dir+'/'+params.sample_id_qcd+'.h5').filter(slice(params.read_n))
+
+        dist_qcd = sample_qcd['classic_loss'].reshape(params.kfold_n,-1)
+        dist_q_qcd = sample_qcd['quantum_loss'].reshape(params.kfold_n,-1)
+
+        ll_dist_c_qcd.append(dist_qcd)
+        ll_dist_q_qcd.append(dist_q_qcd)
+
+        sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
+
+        ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
+        ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
+
+
+    legend_signal_names=list(run_n_dict.keys())
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z))
+
+
+    #****************************************#
+    #               G_RS 3.5TeV
+
+    sample_id_sig = 'GtoWW35na'
+
+    ll_dist_c_sigs = []; ll_dist_q_sigs = []
+
+    for z_dim, run_n in run_n_dict.items():
+
+        input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
+
+        sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
+
+        ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
+        ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
+
+
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z))
 
 
 

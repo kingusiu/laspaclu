@@ -1,5 +1,5 @@
 import pathlib
-
+from collections import OrderedDict
 
 ###     categories    ###
 # ----------------------#
@@ -41,13 +41,13 @@ reporting_gif_base_dir = 'results/gif'
 #                       LABELS & COLORS                       #
 # *********************************************************** #
 
-sample_name_dict = {
+sample_name_dict = OrderedDict(
 
-    'qcdSigExt': 'QCD signal-region',
-    'GtoWW35na': r'$G(3.5 TeV)\to WW$ narrow',
-    'GtoWW15br': r'$G(1.5 TeV)\to WW$ broad',
-    'AtoHZ35': r'$A(3.5 TeV) \to HZ$'
-}
+    qcdSigExt = 'QCD signal-region',
+    GtoWW35na = r'$G(3.5 TeV)\to WW$ narrow',
+    GtoWW15br = r'$G(1.5 TeV)\to WW$ broad',
+    AtoHZ35 = r'$A(3.5 TeV) \to HZ \to ZZZ$'
+)
 
 # colors BG vs SIG
 

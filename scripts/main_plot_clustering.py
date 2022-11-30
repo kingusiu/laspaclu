@@ -89,7 +89,7 @@ Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_i
 params = Parameters(run_n=1, 
                     latent_dim=4,
                     ae_run_n=50, 
-                    read_n=int(5e1), # test on 20K events in 10 fold (10x2000)
+                    read_n=int(1e3), # test on 20K events in 10 fold (10x2000)
                     sample_id_qcd='qcdSigExt',
                     sample_id_sigs=['GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     raw_format=True)
