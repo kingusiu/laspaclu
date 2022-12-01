@@ -86,7 +86,7 @@ def plot_cluster_centers_classic_vs_quantum(centers_c, centers_q, plot_name, fig
 
 
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_id_qcd sample_id_sigs raw_format')
-params = Parameters(run_n=45, 
+params = Parameters(run_n=49, 
                     latent_dim=8,
                     ae_run_n=50, 
                     read_n=int(5e4), # test on 20K events in 10 fold (10x2000)
@@ -209,9 +209,9 @@ if do_cluster_assignments:
 
     # plot classic results
     for sample_id in [params.sample_id_qcd]+params.sample_id_sigs:
-        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_c[sample_id], centers_c, filename_suffix='cluster_assignments_classic_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
+        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_c[sample_id], centers_c, filename_suffix='_classic_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
 
     # plot quantum results
     for sample_id in [params.sample_id_qcd]+params.sample_id_sigs:
-        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_q[sample_id], centers_q, filename_suffix='cluster_assignments_quantum_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
+        plott.plot_clusters_pairplot(latent_coords[sample_id], assign_q[sample_id], centers_q, filename_suffix='_quantum_'+str(sample_id)+'_run_'+str(params.run_n), fig_dir=fig_dir)
 
