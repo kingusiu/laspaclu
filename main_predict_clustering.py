@@ -45,10 +45,10 @@ def combine_loss_min(loss):
 
 
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_ids cluster_alg normalize quantum_min raw_format')
-params = Parameters(run_n=49, 
+params = Parameters(run_n=45, 
                     latent_dim=8,
                     ae_run_n=50, 
-                    read_n=int(5e4), # test on 100K events in 10 fold (10x10000) 1e5 
+                    read_n=int(5e4), # test on 50K events in 10 fold (10x10000) 5e4 
                     sample_ids=['qcdSigExt', 'GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     cluster_alg='kmeans', 
                     normalize=False,

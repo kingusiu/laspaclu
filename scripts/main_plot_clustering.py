@@ -86,10 +86,10 @@ def plot_cluster_centers_classic_vs_quantum(centers_c, centers_q, plot_name, fig
 
 
 Parameters = namedtuple('Parameters', 'run_n latent_dim ae_run_n read_n sample_id_qcd sample_id_sigs raw_format')
-params = Parameters(run_n=1, 
-                    latent_dim=4,
+params = Parameters(run_n=45, 
+                    latent_dim=8,
                     ae_run_n=50, 
-                    read_n=int(1e3), # test on 20K events in 10 fold (10x2000)
+                    read_n=int(5e4), # test on 20K events in 10 fold (10x2000)
                     sample_id_qcd='qcdSigExt',
                     sample_id_sigs=['GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
                     raw_format=True)

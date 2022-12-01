@@ -53,7 +53,7 @@ sample_name_dict = OrderedDict(
 
 bg_blue = '#1b98e0' # background blue #1CAAE7
 sig_red = '#F23602' #E4572E' # signal red/orange #DE1A1A
-multi_sig_palette = ['#F4A615','#6C56B3','#F24236'] # yellow, violet, red
+multi_sig_palette = ['#F4A615','#6C56B3','#F24236','#ED701D'] # yellow, violet, red, pumpkin
 
 
 # colors classic vs quantum
