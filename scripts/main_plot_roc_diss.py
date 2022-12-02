@@ -11,13 +11,13 @@ import os
 import mplhep as hep
 import pathlib
 from collections import namedtuple
+from collections import OrderedDict
 
 import laspaclu.src.analysis.roc as roc
 import laspaclu.src.util.logging as log
 import laspaclu.src.util.string_constants as stco
 import pofah.jet_sample as jesa
 import anpofah.model_analysis.roc_analysis as ra
-
 
 
 def prepare_truths_and_scores(scores_bg, scores_sig):
@@ -63,7 +63,7 @@ def plot_roc(ll_sc_bg_c, ll_sc_sig_c, ll_sc_bg_q, ll_sc_sig_q, main_legend_label
     legend2 = plt.legend([lines[i*len(line_styles)] for i in range(len(main_legend_labels))], main_legend_labels, loc='lower left', frameon=False, title=main_legend_title, fontsize=14, title_fontsize=17)
     
     auc_legend_labels = [r"$  {:.3f} \,\,|\,\, {:.3f}$".format(aucs[i*2],aucs[i*2+1]) for i in range(len(main_legend_labels))]
-    auc_legend_title = r"auc$\,\,q\,\,\vert\,\,c$"
+    auc_legend_title = r"auc q $\vert$ c$"
     legend3 = plt.legend([lines[i*len(line_styles)] for i in range(len(main_legend_labels))], auc_legend_labels, loc='lower center', frameon=False, title=auc_legend_title, fontsize=14, title_fontsize=17) 
     
     legend1._legend_box.align = "left"
@@ -99,6 +99,21 @@ def plot_roc(ll_sc_bg_c, ll_sc_sig_c, ll_sc_bg_q, ll_sc_sig_q, main_legend_label
     fig.savefig(fig_path, bbox_inches='tight')
     plt.close(fig)
 
+
+def read_scores_from_multiple_runs(ll_run_n, sample_id, read_n):
+
+    ll_scores_c = []; ll_scores_q = []
+
+    for run_n in ll_run_n:
+
+        input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
+
+        sample = jesa.JetSample.from_input_file(name=sample_id, path=input_data_dir+'/'+sample_id+'.h5').filter(slice(read_n))
+
+        ll_scores_c.append(sample['classic_loss'])
+        ll_scores_q.append(sample['quantum_loss'])
+
+    return ll_scores_c, ll_scores_q
 
 
 #****************************************#
@@ -152,11 +167,11 @@ plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, mai
 #    PLOT ALL TRAIN-N, FIXED DIM=8, FIXED SIG (runs 
 #**********************************************************#
 
-run_n_dict = {
-    10: 41,
-    600: 45,
-    6000: 49,
-}
+run_n_dict = OrderedDict([
+    (10,41),
+    (600,45),
+    (6000,49),
+])
 
 dim_z = 8
 
@@ -171,27 +186,16 @@ legend_title = r"training size"
 
 
 #****************************************#
-#               A to HZ
+#               QCD
 
+ll_scores_qcd_c, ll_scores_qcd_q = read_scores_from_multiple_runs(run_n_dict.values(), params.sample_id_qcd, params.read_n)
+
+#****************************************#
+#               A to HZ
 
 sample_id_sig = 'AtoHZ35'
 
-ll_scores_qcd_c = []; ll_scores_qcd_q = []
-ll_scores_sig_c = []; ll_scores_sig_q = []
-
-for train_n, run_n in run_n_dict.items():
-
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_qcd = jesa.JetSample.from_input_file(name=params.sample_id_qcd, path=input_data_dir+'/'+params.sample_id_qcd+'.h5').filter(slice(params.read_n))
-
-    ll_scores_qcd_c.append(sample_qcd['classic_loss'])
-    ll_scores_qcd_q.append(sample_qcd['quantum_loss'])
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_scores_sig_c.append(sample_sig['classic_loss'])
-    ll_scores_sig_q.append(sample_sig['quantum_loss'])
+ll_scores_sig_c, ll_scores_sig_q = read_scores_from_multiple_runs(run_n_dict.values(), sample_id_sig, params.read_n) 
 
 plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, main_legend_labels=legend_labels, main_legend_title=legend_title, base_n=int(7e2), auc_legend_offset=-0.12, plot_name='roc_allTrainN_z'+str(dim_z)+'_'+str(sample_id_sig), fig_dir=fig_dir)
 
@@ -199,19 +203,9 @@ plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, mai
 #****************************************#
 #               G_RS 1.5TeV broad
 
-
 sample_id_sig = 'GtoWW15br'
 
-ll_scores_sig_c = []; ll_scores_sig_q = []
-
-for train_n, run_n in run_n_dict.items():
-
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_scores_sig_c.append(sample_sig['classic_loss'])
-    ll_scores_sig_q.append(sample_sig['quantum_loss'])
+ll_scores_sig_c, ll_scores_sig_q = read_scores_from_multiple_runs(run_n_dict.values(), sample_id_sig, params.read_n) 
 
 plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, main_legend_labels=legend_labels, main_legend_title=legend_title, base_n=int(1e4), auc_legend_offset=-0.12, plot_name='roc_allTrainN_z'+str(dim_z)+'_'+str(sample_id_sig), fig_dir=fig_dir)
 
@@ -219,34 +213,23 @@ plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, mai
 #****************************************#
 #               G_RS 3.5TeV na
 
-
 sample_id_sig = 'GtoWW35na'
 
-ll_scores_sig_c = []; ll_scores_sig_q = []
-
-for train_n, run_n in run_n_dict.items():
-
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_scores_sig_c.append(sample_sig['classic_loss'])
-    ll_scores_sig_q.append(sample_sig['quantum_loss'])
+ll_scores_sig_c, ll_scores_sig_q = read_scores_from_multiple_runs(run_n_dict.values(), sample_id_sig, params.read_n) 
 
 plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, main_legend_labels=legend_labels, main_legend_title=legend_title, base_n=int(1e2), auc_legend_offset=-0.12, plot_name='roc_allTrainN_z'+str(dim_z)+'_'+str(sample_id_sig), fig_dir=fig_dir)
-
 
 
 #**********************************************************#
 #    PLOT ALL Z-D, FIXED N=?, FIXED SIG (runs 
 #**********************************************************#
 
-run_n_dict = {
-    4: 40,
-    8: 41,
-    16: 42,
-    32: 43
-}
+run_n_dict = OrderedDict([
+    (4,40),
+    (8,41),
+    (16,42),
+    (32,43)
+])
 
 train_n = 10
 
@@ -254,55 +237,32 @@ train_n = 10
 fig_dir = os.path.join(stco.reporting_fig_base_dir,'roc','allZDim','trainN'+str(train_n)+'_'+'_'.join(['r'+str(nn) for nn in run_n_dict.values()]))
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
-
+# legend setup
+# legend_labels=[r"$z \in \mathbb{R}^4$",r"$z \in \mathbb{R}^8$", r"$z \in \mathbb{R}^{16}$", r"$z \in \mathbb{R}^{32}$"])
 legend_labels=[r"$z \in R^4$",r"$z \in R^8$", r"$z \in R^{16}$", r"$z \in R^{32}$"]
 legend_title = r"latent dimension"
 
+#****************************************#
+#               QCD
+
+ll_scores_qcd_c, ll_scores_qcd_q = read_scores_from_multiple_runs(run_n_dict.values(), params.sample_id_qcd, params.read_n)
 
 #****************************************#
 #               A to HZ
 
-
 sample_id_sig = 'AtoHZ35'
 
-ll_scores_qcd_c = []; ll_scores_qcd_q = []
-ll_scores_sig_c = []; ll_scores_sig_q = []
-
-for run_n in run_n_dict.values():
-
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_qcd = jesa.JetSample.from_input_file(name=params.sample_id_qcd, path=input_data_dir+'/'+params.sample_id_qcd+'.h5').filter(slice(params.read_n))
-
-    ll_scores_qcd_c.append(sample_qcd['classic_loss'])
-    ll_scores_qcd_q.append(sample_qcd['quantum_loss'])
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_scores_sig_c.append(sample_sig['classic_loss'])
-    ll_scores_sig_q.append(sample_sig['quantum_loss'])
+ll_scores_sig_c, ll_scores_sig_q = read_scores_from_multiple_runs(run_n_dict.values(), sample_id_sig, params.read_n) 
 
 plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, main_legend_labels=legend_labels, main_legend_title=legend_title, base_n=int(7e2), auc_legend_offset=-0.12, plot_name='roc_allZDim_trainN'+str(train_n)+'_'+str(sample_id_sig), fig_dir=fig_dir)
-
 
 
 #****************************************#
 #               G_RS 1.5TeV broad
 
-
 sample_id_sig = 'GtoWW15br'
 
-ll_scores_sig_c = []; ll_scores_sig_q = []
-
-for run_n in run_n_dict.values():
-
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_scores_sig_c.append(sample_sig['classic_loss'])
-    ll_scores_sig_q.append(sample_sig['quantum_loss'])
-
+ll_scores_sig_c, ll_scores_sig_q = read_scores_from_multiple_runs(run_n_dict.values(), sample_id_sig, params.read_n) 
 
 plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, main_legend_labels=legend_labels, main_legend_title=legend_title, base_n=int(5e3), auc_legend_offset=-0.12, plot_name='roc_allZDim_trainN'+str(train_n)+'_'+str(sample_id_sig), fig_dir=fig_dir)
 
@@ -310,20 +270,9 @@ plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, mai
 #****************************************#
 #               G_RS 3.5TeV na
 
-
 sample_id_sig = 'GtoWW35na'
 
-ll_scores_sig_c = []; ll_scores_sig_q = []
-
-for run_n in run_n_dict.values():
-
-    input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
-
-    sample_sig = jesa.JetSample.from_input_file(name=sample_id_sig, path=input_data_dir+'/'+sample_id_sig+'.h5').filter(slice(params.read_n))
-
-    ll_scores_sig_c.append(sample_sig['classic_loss'])
-    ll_scores_sig_q.append(sample_sig['quantum_loss'])
-
+ll_scores_sig_c, ll_scores_sig_q = read_scores_from_multiple_runs(run_n_dict.values(), sample_id_sig, params.read_n) 
 
 plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q, main_legend_labels=legend_labels, main_legend_title=legend_title, base_n=int(1e3), auc_legend_offset=-0.1, plot_name='roc_allZDim_trainN'+str(train_n)+'_'+str(sample_id_sig), fig_dir=fig_dir)
 
