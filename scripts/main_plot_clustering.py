@@ -190,22 +190,25 @@ if do_cluster_centers:
 
 if do_cluster_assignments:
 
+    max_n = int(5e3) # limit N of single jet samples for pairplot
+
     latent_coords = {}
     assign_c = {}
     assign_q = {}
 
     # qcd
-    latent_coords[params.sample_id_qcd] = pers.read_latent_representation(sample_qcd, shuffle=False)
-    assign_c[params.sample_id_qcd] = np.concatenate((sample_qcd['classic_assign_j1'], sample_qcd['classic_assign_j2']))
-    assign_q[params.sample_id_qcd] = np.concatenate((sample_qcd['quantum_assign_j1'], sample_qcd['quantum_assign_j2']))
+    j1, j2 = pers.read_latent_representation(sample_qcd, shuffle=False, stacked=False)
+    latent_coords[params.sample_id_qcd] = np.vstack([j1[:max_n], j2[:max_n]])
+    assign_c[params.sample_id_qcd] = np.concatenate((sample_qcd['classic_assign_j1'][:max_n], sample_qcd['classic_assign_j2'][:max_n]))
+    assign_q[params.sample_id_qcd] = np.concatenate((sample_qcd['quantum_assign_j1'][:max_n], sample_qcd['quantum_assign_j2'][:max_n]))
     
     # signals
     for sample_id in params.sample_id_sigs:
 
-        latent_coords[sample_id] = pers.read_latent_representation(sample_sigs[sample_id], shuffle=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
-
-        assign_c[sample_id] = np.concatenate((sample_sigs[sample_id]['classic_assign_j1'], sample_sigs[sample_id]['classic_assign_j2']))
-        assign_q[sample_id] = np.concatenate((sample_sigs[sample_id]['quantum_assign_j1'], sample_sigs[sample_id]['quantum_assign_j2']))
+        j1, j2 = pers.read_latent_representation(sample_sigs[sample_id], shuffle=False, stacked=False) # do not shuffle, as loss is later combined assuming first half=j1 and second half=j2
+        latent_coords[sample_id] = np.vstack([j1[:max_n], j2[:max_n]])
+        assign_c[sample_id] = np.concatenate((sample_sigs[sample_id]['classic_assign_j1'][:max_n], sample_sigs[sample_id]['classic_assign_j2'][:max_n]))
+        assign_q[sample_id] = np.concatenate((sample_sigs[sample_id]['quantum_assign_j1'][:max_n], sample_sigs[sample_id]['quantum_assign_j2'][:max_n]))
 
     # plot classic results
     for sample_id in [params.sample_id_qcd]+params.sample_id_sigs:

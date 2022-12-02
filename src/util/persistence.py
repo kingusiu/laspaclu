@@ -15,13 +15,15 @@ def make_model_path(prefix='KM', run_n=0, mkdir=False):
     return path
 
 
-def read_latent_representation(sample, normalize=False, shuffle=True):
+def read_latent_representation(sample, normalize=False, shuffle=True, stacked=True):
 
     l1, l2 = sample.get_latent_representation()
+    if stacked == False:
+        return l1, l2
 
-    # stack jets
+    # stack (and shuffle)
     latent_coords = np.vstack([l1, l2])
-    
+
     if shuffle:
         np.random.shuffle(latent_coords)
     if normalize:
