@@ -1,120 +1,95 @@
+import matplotlib as mpl
+mpl.rc('font',**{'family':'serif','serif':['Times']})
+mpl.rc('text', usetex=True)
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import mplhep as hep
 import numpy as np
 import sklearn.metrics as skl
 import os
-import mplhep as hep
 import pathlib
 
+import laspaclu.src.util.string_constants as stco
 import laspaclu.src.util.logging as log
-import anpofah.model_analysis.roc_analysis as ra
 import pofah.jet_sample as jesa
 
 
-sig_name_dict = {
+def prepare_truths_and_scores(scores_bg, scores_sig):
     
-    'GtoWW15br' : r'Broad $G \to \, WW \,\, 1.5 \, TeV$', 
-    'GtoWW35na' : r'Narrow $G \to \, WW \,\, 3.5 \, TeV$', 
-    'AtoHZ35' : r'$A \to \, HZ \to \, ZZZ \,\, 3.5 \, TeV$'
-}
-
-def prepare_labels_and_losses_signal_comparison(qcd_losses, sig_losses):
-
-    # ******
-    #   qcd_losses : N x 2 (N events x (classic, quantum))
-    #   sig_losses : M x N x 2 ( M signals x N events x (classic, quantum))
-    # ******
-
-    class_labels = []
-    losses = []
-
-    for pos_class_loss in sig_losses: # creates interleaved classic / quantum results
-        class_label_arr, loss_arr = ra.get_label_and_score_arrays(qcd_losses, pos_class_loss) # stack losses and create according labels per strategy
-        class_labels.append(class_label_arr)
-        losses.append(loss_arr)
-
-    return class_labels, losses
-
-def prepare_labels_and_losses_train_sz_comparison(qcd_losses, sig_losses):
-
-    # ******
-    #   qcd_losses : N x 2 (N events x (classic, quantum))
-    #   sig_losses : M x N x 2 ( M signals x N events x (classic, quantum))
-    # ******
-
-    class_labels = []
-    losses = []
-
-    for neg_class_loss, pos_class_loss in zip(qcd_losses, sig_losses): # creates interleaved classic / quantum results
-        class_label_arr, loss_arr = ra.get_label_and_score_arrays(neg_class_loss, pos_class_loss) # stack losses and create according labels per strategy
-        class_labels.append(class_label_arr)
-        losses.append(loss_arr)
-
-    return class_labels, losses
+    y_truths = np.concatenate([np.zeros(len(scores_bg)), np.ones(len(scores_sig))])
+    y_scores = np.concatenate([scores_bg, scores_sig])
+    
+    return y_truths, y_scores
 
 
-
-
-def plot_roc(class_labels, losses, legend_colors, legend_colors_title, test_n=int(1e4), title='ROC', legend_loc='best', plot_name='ROC', fig_dir=None, x_lim=None, log_x=True, fig_format='.png'):
-
-    # ******
-    #   class labels : K x 2 x N (K signals/variations x (classic, quantum) x N events)
-    #   sig_losses : K x 2 x N (K signals/variations x (classic, quantum) x N events)
-    # ******
-
-
+def plot_roc(ll_sc_bg_c, ll_sc_sig_c, ll_sc_bg_q, ll_sc_sig_q, main_legend_labels, main_legend_title, base_n=int(1e3), auc_legend_offset=0.07, plot_name='roc', fig_dir='fig', fig_format='.pdf'):
+    
     plt.style.use(hep.style.CMS)
-
-    line_type_n = len(class_labels[0]) # classic vs quantum
-
-    palette = ['#3E96A1', '#EC4E20', '#FF9505', '#713E5A', '#9E0059']
-    styles = ['solid', 'dashed', 'dotted'][:line_type_n]# 2 styles for classic vs quantum times number of signals
-
-    aucs = []
-    fig = plt.figure(figsize=(8, 8)) # figsize=(5, 5)
-
-    # import ipdb; ipdb.set_trace()
-
-    for y_true_qc, loss_qc, color in zip(class_labels, losses, palette):
-        for y_true, loss, style in zip(y_true_qc, loss_qc, styles): 
-            fpr, tpr, threshold = skl.roc_curve(y_true, loss)
-            aucs.append(skl.roc_auc_score(y_true, loss))
-            if log_x:
-                plt.loglog(tpr, 1./fpr, linestyle=style, color=color) # label=label + " (auc " + "{0:.3f}".format(aucs[-1]) + ")",
-            else:
-                plt.semilogy(tpr, 1./fpr, linestyle=style, color=color)
-
-    dummy_res_lines = [Line2D([0,1],[0,1],linestyle=s, color='gray') for s in styles[:2]]
-    plt.semilogy(np.linspace(0, 1, num=test_n), 1./np.linspace(0, 1, num=test_n), linewidth=1.2, linestyle='solid', color='silver')
+    line_styles = ['solid', 'dashed']
+    fig = plt.figure(figsize=(8, 8))
     
-    # add 2 legends (vae score types and resonance types)
+    aucs = []
+    for sc_bg_c, sc_bg_q, sc_sig_c, sc_sig_q, cc in zip(ll_sc_bg_c, ll_sc_bg_q, ll_sc_sig_c, ll_sc_sig_q, stco.multi_sig_palette):
+        
+        y_truths_q, y_scores_q = prepare_truths_and_scores(sc_bg_q, sc_sig_q)
+        y_truths_c, y_scores_c = prepare_truths_and_scores(sc_bg_c, sc_sig_c)
+        
+        fpr_q, tpr_q, _ = skl.roc_curve(y_truths_q, y_scores_q)
+        fpr_c, tpr_c, _ = skl.roc_curve(y_truths_c, y_scores_c)
+            
+        aucs.append(skl.roc_auc_score(y_truths_q, y_scores_q))
+        aucs.append(skl.roc_auc_score(y_truths_c, y_scores_c))
+        
+        plt.loglog(tpr_q, 1./fpr_q, linestyle='solid', color=cc)
+        plt.loglog(tpr_c, 1./fpr_c, linestyle='dashed', color=cc)
+        
+    # plot random decision line
+    plt.loglog(np.linspace(0, 1, num=base_n), 1./np.linspace(0, 1, num=base_n), linewidth=1.2, linestyle='solid', color='silver')
+
+    dummy_res_lines = [Line2D([0,1],[0,1],linestyle=s, color='gray') for s in line_styles[:2]]
+
+    # add 2 legends (classic vs quantum and resonance types)
     lines = plt.gca().get_lines()
-    legend1 = plt.legend(dummy_res_lines, [r'Quantum', r'Classical'], loc='lower left', frameon=False, title='algorithm', \
-            handlelength=1.5, fontsize=14, title_fontsize=17, bbox_to_anchor=(0,0.28))
-    legend_colors = [l + " (auc " + "{0:.3f} , {1:.3f}".format(aucs[i*2],aucs[i*2+1]) + ")" for i,l in enumerate(legend_colors)]
-    legend2 = plt.legend([lines[i*line_type_n] for i in range(len(legend_colors))], legend_colors, loc='lower left', \
-            frameon=False, title=legend_colors_title, fontsize=14, title_fontsize=17)
+    
+    legend1 = plt.legend(dummy_res_lines, [r'Quantum', r'Classic'], loc='lower left', frameon=False, title='algorithm', handlelength=1.5, fontsize=14, title_fontsize=17, bbox_to_anchor=(0,0.28))
+    
+    main_legend_labels = [r"{}".format(lbl) for lbl in main_legend_labels]
+    legend2 = plt.legend([lines[i*len(line_styles)] for i in range(len(main_legend_labels))], main_legend_labels, loc='lower left', frameon=False, title=main_legend_title, fontsize=14, title_fontsize=17)
+    
+    auc_legend_labels = [r"$  {:.3f} \,\,|\,\, {:.3f}$".format(aucs[i*2],aucs[i*2+1]) for i in range(len(main_legend_labels))]
+    auc_legend_title = r"auc q $\vert$ c"
+    legend3 = plt.legend([lines[i*len(line_styles)] for i in range(len(main_legend_labels))], auc_legend_labels, loc='lower center', frameon=False, title=auc_legend_title, fontsize=14, title_fontsize=17) 
+    
     legend1._legend_box.align = "left"
     legend2._legend_box.align = "left"
+    legend3._legend_box.align = "center"
     for leg in legend1.legendHandles:
-        leg.set_linewidth(2.2)
+        leg.set_linewidth(2.5)
         leg.set_color('gray')
     for leg in legend2.legendHandles:
-        leg.set_linewidth(2.2) 
+        leg.set_linewidth(2.5)
+    for leg in legend3.legendHandles:
+        leg.set_visible(False)
     plt.gca().add_artist(legend1)
     plt.gca().add_artist(legend2)
-
-    plt.title(title , loc="right",fontsize=16)
-
+    plt.gca().add_artist(legend3)
+    
+    plt.draw()
+    
+    # Get the bounding box of the original legend
+    bb = legend3.get_bbox_to_anchor().inverse_transformed(plt.gca().transAxes)
+    # Change to location of the legend. 
+    bb.x0 += auc_legend_offset
+    bb.x1 += auc_legend_offset
+    legend3.set_bbox_to_anchor(bb, transform = plt.gca().transAxes)
+    
     plt.grid()
-    if x_lim:
-        plt.xlim(left=x_lim)
-    plt.xlabel('True positive rate',fontsize=16)
-    plt.ylabel('1 / False positive rate',fontsize=16)
+    plt.xlabel('True positive rate',fontsize=17)
+    plt.ylabel('1 / False positive rate',fontsize=17)
     plt.tight_layout()
-    if fig_dir:
-        print('writing ROC plot to {}'.format(fig_dir))
-        fig.savefig(os.path.join(fig_dir, plot_name + fig_format), bbox_inches='tight')
+        
+    fig_path = os.path.join(fig_dir, plot_name + fig_format)
+    print('writing figure to ' + fig_path)
+    fig.savefig(fig_path, bbox_inches='tight')
     plt.close(fig)
-    return aucs
+
