@@ -95,7 +95,7 @@ params = Parameters(run_n=49,
                     raw_format=True)
 
 # path setup
-fig_dir = os.path.join(stco.reporting_fig_base_dir,'qkmeans_run_'+str(params.run_n))
+fig_dir = os.path.join(stco.reporting_fig_base_dir,'r'+str(params.run_n))
 pathlib.Path(fig_dir).mkdir(parents=True, exist_ok=True)
 
 # logging
