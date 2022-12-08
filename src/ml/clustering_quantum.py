@@ -189,17 +189,14 @@ def train_qmeans_animated(data, cluster_centers_ini, cluster_n=2, quantum_min=Tr
 
 
 
-def train_qmeans(data, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=200):
+def train_qmeans(data, cluster_centers_ini, n_clusters=2, quantum_min=True, rtol=1e-2, max_iter=200):
     """
         train quantum k-means 
         :param data: input array of shape [N x Z] where N .. number of samples, Z .. dimension of latent space
         :return: np.ndarray of cluster centers
     """
 
-
-    # init cluster centers randomly
-    idx = np.random.choice(len(data), size=n_clusters, replace=False)
-    cluster_centers = data[idx]
+    cluster_centers = cluster_centers_ini
 
     # loop until convergence
     i = 0

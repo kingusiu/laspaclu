@@ -107,8 +107,8 @@ logger.info('>>> training qmeans')
 gif_dir = os.path.join(stco.reporting_gif_base_dir,'qkmeans_run_'+str(int(params.run_n)))
 pathlib.Path(gif_dir).mkdir(parents=True, exist_ok=True)
 
-#cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, quantum_min=params.quantum_min, rtol=params.rtol)
-cluster_q_centers = cluster_q.train_qmeans_animated(latent_coords_qcd, cluster_centers_ini, cluster_n=params.cluster_n, quantum_min=True, rtol=1e-2, max_iter=params.max_iter, gif_dir=gif_dir)
+cluster_q_centers = cluster_q.train_qmeans(latent_coords_qcd, cluster_centers_ini, cluster_n=params.cluster_n, quantum_min=params.quantum_min, rtol=params.rtol, max_iter=params.max_iter)
+#cluster_q_centers = cluster_q.train_qmeans_animated(latent_coords_qcd, cluster_centers_ini, cluster_n=params.cluster_n, quantum_min=params.quantum_min, rtol=params.rtol, max_iter=params.max_iter, gif_dir=gif_dir)
 
 model_path_qm = pers.make_model_path(prefix='QM', run_n=params.run_n) + '.npy'
 with open(model_path_qm, 'wb') as f:
