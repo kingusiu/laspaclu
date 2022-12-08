@@ -58,10 +58,11 @@ def assign_clusters(data, cluster_centers, quantum_min=True) -> Tuple[np.ndarray
 
 class ClusterTrainer():
 
-    def __init__(self, latent_coords, cluster_n, max_iter=6):
+    def __init__(self, latent_coords, cluster_n, max_iter=6, quantum_min=True):
         self.latent_coords = latent_coords
         self.max_iter = max_iter
         self.cluster_n = cluster_n
+        self.quantum_min = quantum_min
 
     def yield_next_step(self, cluster_centers_ini, rtol):
         
@@ -81,7 +82,7 @@ class ClusterTrainer():
                 logger.info('>>> maximal number of iterations {} reached'.format(i))
                 break
 
-            cluster_assignments, _ = assign_clusters(self.latent_coords, self.cluster_centers, quantum_min=True)
+            cluster_assignments, _ = assign_clusters(self.latent_coords, self.cluster_centers, quantum_min=self.quantum_min)
 
             new_centers = calc_new_cluster_centers(self.latent_coords, cluster_assignments)
             logger.info('>>> iter {}: new centers {}'.format(i,new_centers))
@@ -175,7 +176,7 @@ def train_qmeans_animated(data, cluster_centers_ini, cluster_n=2, quantum_min=Tr
     cluster_assignments, _ = assign_clusters(data, cluster_centers_ini, quantum_min=quantum_min)
 
     animator = TrainingAnimator(data, cluster_assignments, cluster_centers_ini)
-    trainer = ClusterTrainer(data, cluster_n=cluster_n, max_iter=max_iter)
+    trainer = ClusterTrainer(data, cluster_n=cluster_n, max_iter=max_iter, quantum_min=quantum_min)
 
     animObj = animation.FuncAnimation(animator.gg.figure, animator.animate, frames=trainer.yield_next_step(cluster_centers_ini, rtol), repeat=False, interval=200, blit=True)
 

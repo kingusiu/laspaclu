@@ -28,16 +28,16 @@ import laspaclu.src.util.string_constants as stco
 #****************************************#
 
 Parameters = namedtuple('Parameters', 'run_n ae_run_n lat_dim read_n sample_id_train cluster_alg cluster_n, max_iter normalize quantum_min rtol mjj_center raw_format')
-params = Parameters(run_n=50,
+params = Parameters(run_n=75,
                     ae_run_n=50,
                     lat_dim=16,
-                    read_n=int(6000),
+                    read_n=int(60000),
                     sample_id_train='qcdSig',
                     cluster_alg='kmeans',
                     cluster_n=2,
                     max_iter=100,
                     normalize=False,
-                    quantum_min=True,
+                    quantum_min=False,
                     rtol=1e-2,
                     mjj_center=False,
                     raw_format=True)

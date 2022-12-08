@@ -1,5 +1,6 @@
 import os
 from collections import namedtuple
+from collections import OrderedDict
 import pathlib
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -9,19 +10,9 @@ import sklearn.metrics as skl
 import mplhep as hep
 from matplotlib.lines import Line2D
 
-import laspaclu.util.logging as log
-import laspaclu.util.string_constants as stco
+import laspaclu.src.util.logging as log
+import laspaclu.src.util.string_constants as stco
 import pofah.jet_sample as jesa
-
-
-def get_fpr_and_tpr(neg_class_losses, pos_class_losses):
-
-
-    true_vals = np.concatenate([np.zeros(len(neg_class_losses)), np.ones(len(pos_class_losses))])
-    losses = np.concatenate([neg_class_losses, pos_class_losses])
-    fpr, tpr, threshold = skl.roc_curve(true_vals, losses) # , drop_intermediate=False
-
-    return np.nan_to_num(fpr), np.nan_to_num(tpr)
 
 
 
@@ -40,7 +31,7 @@ def get_mean_and_error(data):
     return [np.mean(data, axis=0), np.std(data, axis=0)]
 
 def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, classic_loss_sig, ids, n_folds, 
-                       pic_id=None, xlabel='TPR', ylabel=r'1/FPR', legend_loc='best', legend_title='$ROC$', save_dir=None,
+                       pic_id=None, xlabel='TPR', ylabel=r'1/FPR', legend_loc='center right', legend_title='$ROC$', save_dir=None,
                        palette=['#3E96A1', '#EC4E20', '#FF9505', '#6C56B3']):
 
     lines_n = len(quantum_loss_qcd)
@@ -87,10 +78,11 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
         tpr_mean_q = np.mean(np.array(tpr_q), axis=0)
         tpr_mean_c = np.mean(np.array(tpr_c), axis=0)
         
-        if ids[i]=='Narrow 'r'G $\to$ WW 3.5 TeV': # uncertainties are bigger for G_NA
-            band_ind = np.where(tpr_mean_q > 0.6)[0] 
+        # import ipdb; ipdb.set_trace()
+        if 'GtoWW35na' in pic_id or 'Narrow' in str(id_name): # uncertainties are bigger for G_NA
+            band_ind = np.where(tpr_mean_q > 0.5)[0] 
         else:
-            band_ind = np.where(tpr_mean_q > 0.35)[0]
+            band_ind = np.where(tpr_mean_q > 0.2)[0]
         
         plt.plot(tpr_mean_q, fpr_data_q[0], linewidth=1.5, color=palette[i])
         plt.plot(tpr_mean_c, fpr_data_c[0], linewidth=1.5, color=palette[i], linestyle='dashed')
@@ -106,8 +98,9 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
             handlelength=1.5, fontsize=16, title_fontsize=14)#, bbox_to_anchor=(0.01,0.65)) # bbox_to_anchor=(0.97,0.78) -> except for latent study
     legend2 = plt.legend([lines[i*2] for i in range(len(palette))], anomaly_auc_legend, loc='lower left', \
             frameon=True, title=r'AUC $\;\quad$Quantum $\quad\;\;\;$ Classical', fontsize=15, title_fontsize=14,markerscale=0.5)
-    legend3 = plt.legend([lines[i*2] for i in range(len(palette))], study_legend, markerscale=0.5, loc='center right', 
-                         frameon=True, title=legend_title, fontsize=14, title_fontsize=15, bbox_to_anchor=(0.95,0.75))
+    bb = {'bbox_to_anchor': (0.95,0.75)} if 'allSig' in legend_title else {}
+    legend3 = plt.legend([lines[i*2] for i in range(len(palette))], study_legend, markerscale=0.5, loc=legend_loc, 
+                         frameon=True, title=legend_title, fontsize=14, title_fontsize=15, **bb)
     legend3.get_frame().set_alpha(0.35)
     
     legend1._legend_box.align = "left"
@@ -144,7 +137,7 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
 
 Parameters = namedtuple('Parameters', 'sample_id_qcd sample_id_sigs kfold_n read_n')
 params = Parameters(sample_id_qcd='qcdSigExt',
-                    sample_id_sigs=['GtoWW35na', 'GtoWW15br', 'AtoHZ35'], 
+                    sample_id_sigs=['GtoWW35na', 'AtoHZ35', 'GtoWW15br'], 
                     kfold_n=10,
                     read_n=int(5e4)
                     )
@@ -162,9 +155,9 @@ logger.info('\n'+'*'*70+'\n'+'\t\t\t PLOTING RUN \n'+str(params)+'\n'+'*'*70)
 #****************************************#
 #               READ DATA
 
-run_n = 40
-dim_z = 4
-train_n = 10
+run_n = 45
+dim_z = 8
+train_n = 600
 
 # path setup
 fig_dir = os.path.join(stco.reporting_fig_base_dir,'paper_submission_plots')
@@ -189,21 +182,24 @@ for sample_id_sig in params.sample_id_sigs:
 
 # import ipdb; ipdb.set_trace()
 palette = ['forestgreen', '#EC4E20', 'darkorchid']
-legend_signal_names=['Narrow 'r'G $\to$ WW 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV']
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, \
-    pic_id='qmeans_allSignals_run_'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)), palette=palette)
+legend_title = 'Anomaly signature'
+legend_labels = ['Narrow 'r'G $\to$ WW 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV']
+plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, \
+    pic_id='roc_qmeans_allSignals_r'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)), palette=palette, legend_title=legend_title, legend_loc='upper left')
 
 
 #**********************************************************#
 #    PLOT ALL LATENT DIMS, FIXED SIG=X, FIXED-N=600
 #**********************************************************#
 
-run_n_dict = {
-    4: 40,
-    8: 41,
-    16: 42,
-    32: 43
-}
+run_n_dict = OrderedDict([
+    (32,47),
+    (16,46),
+    (8,45),
+    (4,44),
+])
+
+train_n = 600
 
 #****************************************#
 #               A to HZ
@@ -214,7 +210,7 @@ sample_id_sig = 'AtoHZ35'
 ll_dist_c_qcd = []; ll_dist_q_qcd = []
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
 
-for z_dim, run_n in run_n_dict.items():
+for run_n in run_n_dict.values():
 
     input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
 
@@ -231,9 +227,10 @@ for z_dim, run_n in run_n_dict.items():
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
-
-legend_signal_names=['lat4', 'lat8', 'lat16', 'lat32']
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_trainN_'+str(int(train_n)))
+legend_title = 'Latent dim.'
+legend_labels = ['32', '16', '8', '4'][-len(run_n_dict):]
+palette = ['black', '#3E96A1', '#EC4E20', '#FF9505']
+plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=legend_title, palette=palette)
 
 
 #****************************************#
@@ -243,7 +240,7 @@ sample_id_sig = 'GtoWW35na'
 
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
 
-for z_dim, run_n in run_n_dict.items():
+for run_n in run_n_dict.values():
 
     input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
 
@@ -253,20 +250,20 @@ for z_dim, run_n in run_n_dict.items():
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
 
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_trainN_'+str(int(train_n)))
+plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=legend_title)
 
 
 #**********************************************************#
 #    PLOT ALL Training sizes, FIXED SIG=X, FIXED-Z=8
 #**********************************************************#
 
-run_n_dict = {
-    10: 40,
-    600: 44,
-    6000: 48,
-}
+run_n_dict = OrderedDict([
+    (6000,49),
+    (600,45),
+    (10,41),
+])
 
-dim_z = 4
+dim_z = 8
 
 #****************************************#
 #               A to HZ
@@ -277,7 +274,7 @@ sample_id_sig = 'AtoHZ35'
 ll_dist_c_qcd = []; ll_dist_q_qcd = []
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
 
-for z_dim, run_n in run_n_dict.items():
+for run_n in run_n_dict.values():
 
     input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
 
@@ -294,9 +291,9 @@ for z_dim, run_n in run_n_dict.items():
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
-
-legend_signal_names=list(run_n_dict.keys())
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z))
+legend_title = 'Train size'
+legend_labels=list(run_n_dict.keys())
+plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
 
 
 #****************************************#
@@ -306,7 +303,7 @@ sample_id_sig = 'GtoWW35na'
 
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
 
-for z_dim, run_n in run_n_dict.items():
+for run_n in run_n_dict.values():
 
     input_data_dir = stco.cluster_out_data_dir+'/run_'+str(run_n)
 
@@ -316,4 +313,4 @@ for z_dim, run_n in run_n_dict.items():
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
 
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_signal_names, params.kfold_n, save_dir=fig_dir, pic_id='qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z))
+plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
