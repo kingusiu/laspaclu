@@ -8,7 +8,7 @@ import matplotlib.cm as cm
 import seaborn as sns
 import mplhep as hep
 import pandas as pd
-import anpofah.util.plotting_util as plut
+import anpofah.src.util.plotting_util as plut
 
 
 def make_pairwise_heatmaps(data, num_dim):
