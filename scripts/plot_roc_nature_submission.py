@@ -138,7 +138,7 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
         fpr_fixpoint_mean_q, fpr_fixpoint_std_q = get_fpr_mean_and_std_for_tpr_fixpoint(tpr_fixpoint, tprs=tpr_mean_q, fprs=fpr_data_q)
         fpr_fixpoint_mean_c, fpr_fixpoint_std_c = get_fpr_mean_and_std_for_tpr_fixpoint(tpr_fixpoint, tprs=tpr_mean_c, fprs=fpr_data_c)
         
-        import ipdb; ipdb.set_trace()
+        # import ipdb; ipdb.set_trace()
         if 'GtoWW35na' in pic_id or 'Narrow' in str(id_name): # uncertainties are bigger for G_NA
             band_ind = np.where(tpr_mean_q > 0.5)[0] 
         else:
@@ -221,6 +221,7 @@ run_n = 45
 dim_z = 8
 train_n = 600
 study_title = 'Anomaly signature'
+study_labels = ['Narrow 'r'G $\to$ WW 3.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV']
 
 # path setup
 fig_dir = os.path.join(stco.reporting_fig_base_dir,'paper_submission_plots')
@@ -245,14 +246,14 @@ for sample_id_sig in params.sample_id_sigs:
 
 if params.do_plots:
     palette = ['forestgreen', '#EC4E20', 'darkorchid']
-    legend_labels = ['Narrow 'r'G $\to$ WW 3.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV']
-    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, \
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, \
         pic_id='roc_qmeans_allSignals_r'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)), palette=palette, legend_title=study_title, legend_loc='upper left')
 
 if params.do_fpr_table:
     
     logger.info('printing fpr table for ' + study_title)
-    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n)
+    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n)
+
 
 #**********************************************************#
 #    PLOT ALL LATENT DIMS, FIXED SIG=X, FIXED-N=600
@@ -273,6 +274,7 @@ train_n = 600
 
 sample_id_sig = 'AtoHZ35'
 study_title = 'Latent dim.'
+study_labels = ['32', '16', '8', '4'][-len(run_n_dict):]
 
 ll_dist_c_qcd = []; ll_dist_q_qcd = []
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
@@ -296,14 +298,13 @@ for run_n in run_n_dict.values():
 
 
 if params.do_plots:
-    legend_labels = ['32', '16', '8', '4'][-len(run_n_dict):]
     palette = ['black', '#3E96A1', '#EC4E20', '#FF9505']
-    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=study_title, palette=palette)
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=study_title, palette=palette)
 
 
 if params.do_fpr_table:
-    logger.info('printing fpr table for ' + study_title)
-    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n)
+    logger.info(f'printing fpr table for {study_title} of {sample_id_sig}')
+    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n)
 
 #****************************************#
 #               G_RS 3.5TeV
@@ -321,9 +322,13 @@ for run_n in run_n_dict.values():
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
+if params.do_plots:
 
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=study_title)
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=study_title)
 
+if params.do_fpr_table:
+    logger.info(f'printing fpr table for {study_title} of {sample_id_sig}')
+    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n)
 
 #**********************************************************#
 #    PLOT ALL Training sizes, FIXED SIG=X, FIXED-Z=8
@@ -343,6 +348,7 @@ dim_z = 8
 
 sample_id_sig = 'AtoHZ35'
 study_title = 'Train size'
+study_labels=list(run_n_dict.keys())
 
 ll_dist_c_qcd = []; ll_dist_q_qcd = []
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
@@ -364,8 +370,14 @@ for run_n in run_n_dict.values():
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
-legend_labels=list(run_n_dict.keys())
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
+if params.do_plots:
+
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
+
+if params.do_fpr_table:
+    logger.info(f'printing fpr table for {study_title} of {sample_id_sig}')
+    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n)
+
 
 
 #****************************************#
@@ -384,5 +396,11 @@ for run_n in run_n_dict.values():
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
+if params.do_plots:
 
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
+
+if params.do_fpr_table:
+    logger.info(f'printing fpr table for {study_title} of {sample_id_sig}')
+    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n)
+
