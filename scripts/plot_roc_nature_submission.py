@@ -31,7 +31,7 @@ def get_mean_and_error(data):
     return [np.mean(data, axis=0), np.std(data, axis=0)]
 
 def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, classic_loss_sig, ids, n_folds, 
-                       pic_id=None, xlabel='TPR', ylabel=r'1/FPR', legend_loc='center right', legend_title='$ROC$', save_dir=None,
+                       pic_id=None, xlabel='TPR', ylabel=r'FPR$^{-1}$', legend_loc='center right', legend_title='$ROC$', save_dir=None,
                        palette=['#3E96A1', '#EC4E20', '#FF9505', '#6C56B3']):
 
     lines_n = len(quantum_loss_qcd)
@@ -98,7 +98,7 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
             handlelength=1.5, fontsize=16, title_fontsize=14)#, bbox_to_anchor=(0.01,0.65)) # bbox_to_anchor=(0.97,0.78) -> except for latent study
     legend2 = plt.legend([lines[i*2] for i in range(len(palette))], anomaly_auc_legend, loc='lower left', \
             frameon=True, title=r'AUC $\;\quad$Quantum $\quad\;\;\;$ Classical', fontsize=15, title_fontsize=14,markerscale=0.5)
-    bb = {'bbox_to_anchor': (0.95,0.75)} if 'allSig' in legend_title else {}
+    bb =  {} if 'Anomaly' in legend_title else {'bbox_to_anchor': (0.95,0.75)}
     legend3 = plt.legend([lines[i*2] for i in range(len(palette))], study_legend, markerscale=0.5, loc=legend_loc, 
                          frameon=True, title=legend_title, fontsize=14, title_fontsize=15, **bb)
     legend3.get_frame().set_alpha(0.35)
