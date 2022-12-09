@@ -23,12 +23,65 @@ def get_roc_data(qcd, bsm, fix_tpr=False):
     if fix_tpr: return fpr_loss, tpr_loss, threshold_loss, true_val, pred_val
     return fpr_loss, tpr_loss
 
-def get_FPR_for_fixed_TPR(tpr_window, fpr_loss, tpr_loss, true_data, pred_data, tolerance):
-    position = np.where((tpr_loss>=tpr_window-tpr_window*tolerance) & (tpr_loss<=tpr_window+tpr_window*tolerance))[0]
-    return np.mean(fpr_loss[position])
+def get_fpr_mean_and_std_for_tpr_fixpoint(tpr_fixpoint, tprs, fprs, window=0.001):
+    idx = np.where((tprs>=tpr_fixpoint-tpr_fixpoint*window) & (tprs<=tpr_fixpoint+tpr_fixpoint*window))[0]
+    return np.mean(fprs[0][idx]), np.mean(fprs[1][idx])
+
 
 def get_mean_and_error(data):
     return [np.mean(data, axis=0), np.std(data, axis=0)]
+
+
+def compute_fpr_mean_and_std_for_fixpoint_tpr(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, classic_loss_sig, ids, n_folds, save_dir=None):
+
+    # base fpr to interpolate for varying size fprs returned by scikit (omitting repeated values)
+    base_tpr = np.linspace(0, 1, 10001)
+
+    # todo: for both tpr fixpoints in (0.6,0.8) 
+    tpr_fixpoint = 0.8
+
+    # collecting mean and error of fpr for tpr fixpoint
+    fpr_fix_mu_qs = []; fpr_fix_mu_cs = []
+    fpr_fix_std_qs = []; fpr_fix_std_cs = [] 
+
+    for i, id_name in enumerate(ids): # for each latent space or train size
+        
+        fpr_q=[]; fpr_c=[]
+        tpr_q=[]; tpr_c=[]
+        # import ipdb; ipdb.set_trace()
+        
+        for j in range(n_folds):
+        
+            # quantum data
+            fq, tq = get_roc_data(quantum_loss_qcd[i][j], quantum_loss_sig[i][j])
+        
+            # classic data
+            fc, tc = get_roc_data(classic_loss_qcd[i][j], classic_loss_sig[i][j])
+            
+            # interpolate
+            fc = np.interp(base_tpr, tc, fc)
+            fq = np.interp(base_tpr, tq, fq)
+                                    
+            fpr_q.append(fq); fpr_c.append(fc)
+            tpr_q.append(base_tpr); tpr_c.append(base_tpr)
+        
+        fpr_data_q = np.nan_to_num(get_mean_and_error(1.0/np.array(fpr_q)))
+        fpr_data_c = np.nan_to_num(get_mean_and_error(1.0/np.array(fpr_c)))
+        
+        tpr_mean_q = np.mean(np.array(tpr_q), axis=0)
+        tpr_mean_c = np.mean(np.array(tpr_c), axis=0)
+
+        fpr_fix_mu_q, fpr_fix_std_q = get_fpr_mean_and_std_for_tpr_fixpoint(tpr_fixpoint, tprs=tpr_mean_q, fprs=fpr_data_q)
+        fpr_fix_mu_c, fpr_fix_std_c = get_fpr_mean_and_std_for_tpr_fixpoint(tpr_fixpoint, tprs=tpr_mean_c, fprs=fpr_data_c)
+
+        fpr_fix_mu_qs.append(fpr_fix_mu_q); fpr_fix_mu_cs.append(fpr_fix_mu_c)
+        fpr_fix_std_qs.append(fpr_fix_std_q); fpr_fix_std_cs.append(fpr_fix_std_c)
+
+    # print results:
+    for i, id_name in enumerate(ids):
+        print(f'{id_name}: quantum {fpr_fix_mu_qs[i]} +/- {fpr_fix_std_qs[i]} | classic {fpr_fix_mu_cs[i]} +/- {fpr_fix_std_cs[i]}')
+
+
 
 def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, classic_loss_sig, ids, n_folds, 
                        pic_id=None, xlabel='TPR', ylabel=r'FPR$^{-1}$', legend_loc='center right', legend_title='$ROC$', save_dir=None,
@@ -44,6 +97,10 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
 
     # base fpr to interpolate for varying size fprs returned by scikit (omitting repeated values)
     base_tpr = np.linspace(0, 1, 10001)
+
+    # collecting mean and error of fpr for tpr fixpoint
+    fpr_fix_mu_q = []; fpr_fix_mu_c = []
+    fpr_fix_std_q = []
 
     for i, id_name in enumerate(ids): # for each latent space or train size
         
@@ -72,13 +129,16 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
         auc_data_q = get_mean_and_error(np.array(auc_q))
         auc_data_c = get_mean_and_error(np.array(auc_c))
         
-        fpr_data_q = get_mean_and_error(1.0/np.array(fpr_q))
-        fpr_data_c = get_mean_and_error(1.0/np.array(fpr_c))
+        fpr_data_q = np.nan_to_num(get_mean_and_error(1.0/np.array(fpr_q)))
+        fpr_data_c = np.nan_to_num(get_mean_and_error(1.0/np.array(fpr_c)))
         
         tpr_mean_q = np.mean(np.array(tpr_q), axis=0)
         tpr_mean_c = np.mean(np.array(tpr_c), axis=0)
+
+        fpr_fixpoint_mean_q, fpr_fixpoint_std_q = get_fpr_mean_and_std_for_tpr_fixpoint(tpr_fixpoint, tprs=tpr_mean_q, fprs=fpr_data_q)
+        fpr_fixpoint_mean_c, fpr_fixpoint_std_c = get_fpr_mean_and_std_for_tpr_fixpoint(tpr_fixpoint, tprs=tpr_mean_c, fprs=fpr_data_c)
         
-        # import ipdb; ipdb.set_trace()
+        import ipdb; ipdb.set_trace()
         if 'GtoWW35na' in pic_id or 'Narrow' in str(id_name): # uncertainties are bigger for G_NA
             band_ind = np.where(tpr_mean_q > 0.5)[0] 
         else:
@@ -135,11 +195,13 @@ def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, cl
 #****************************************#
 
 
-Parameters = namedtuple('Parameters', 'sample_id_qcd sample_id_sigs kfold_n read_n')
+Parameters = namedtuple('Parameters', 'sample_id_qcd sample_id_sigs kfold_n read_n do_plots do_fpr_table')
 params = Parameters(sample_id_qcd='qcdSigExt',
                     sample_id_sigs=['GtoWW35na', 'AtoHZ35', 'GtoWW15br'], 
                     kfold_n=10,
-                    read_n=int(5e4)
+                    read_n=int(5e4),
+                    do_plots=False,
+                    do_fpr_table=True
                     )
 
 
@@ -158,6 +220,7 @@ logger.info('\n'+'*'*70+'\n'+'\t\t\t PLOTING RUN \n'+str(params)+'\n'+'*'*70)
 run_n = 45
 dim_z = 8
 train_n = 600
+study_title = 'Anomaly signature'
 
 # path setup
 fig_dir = os.path.join(stco.reporting_fig_base_dir,'paper_submission_plots')
@@ -180,13 +243,16 @@ for sample_id_sig in params.sample_id_sigs:
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
-# import ipdb; ipdb.set_trace()
-palette = ['forestgreen', '#EC4E20', 'darkorchid']
-legend_title = 'Anomaly signature'
-legend_labels = ['Narrow 'r'G $\to$ WW 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV']
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, \
-    pic_id='roc_qmeans_allSignals_r'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)), palette=palette, legend_title=legend_title, legend_loc='upper left')
+if params.do_plots:
+    palette = ['forestgreen', '#EC4E20', 'darkorchid']
+    legend_labels = ['Narrow 'r'G $\to$ WW 3.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV']
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, \
+        pic_id='roc_qmeans_allSignals_r'+str(run_n)+'_z'+str(dim_z)+'_trainN_'+str(int(train_n)), palette=palette, legend_title=study_title, legend_loc='upper left')
 
+if params.do_fpr_table:
+    
+    logger.info('printing fpr table for ' + study_title)
+    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n)
 
 #**********************************************************#
 #    PLOT ALL LATENT DIMS, FIXED SIG=X, FIXED-N=600
@@ -206,6 +272,7 @@ train_n = 600
 
 
 sample_id_sig = 'AtoHZ35'
+study_title = 'Latent dim.'
 
 ll_dist_c_qcd = []; ll_dist_q_qcd = []
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
@@ -227,11 +294,16 @@ for run_n in run_n_dict.values():
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
-legend_title = 'Latent dim.'
-legend_labels = ['32', '16', '8', '4'][-len(run_n_dict):]
-palette = ['black', '#3E96A1', '#EC4E20', '#FF9505']
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=legend_title, palette=palette)
 
+if params.do_plots:
+    legend_labels = ['32', '16', '8', '4'][-len(run_n_dict):]
+    palette = ['black', '#3E96A1', '#EC4E20', '#FF9505']
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=study_title, palette=palette)
+
+
+if params.do_fpr_table:
+    logger.info('printing fpr table for ' + study_title)
+    compute_fpr_mean_and_std_for_fixpoint_tpr(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n)
 
 #****************************************#
 #               G_RS 3.5TeV
@@ -250,7 +322,7 @@ for run_n in run_n_dict.values():
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
 
-plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=legend_title)
+plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allZ_sig'+sample_id_sig+'_trainN_'+str(int(train_n)), legend_title=study_title)
 
 
 #**********************************************************#
@@ -270,6 +342,7 @@ dim_z = 8
 
 
 sample_id_sig = 'AtoHZ35'
+study_title = 'Train size'
 
 ll_dist_c_qcd = []; ll_dist_q_qcd = []
 ll_dist_c_sigs = []; ll_dist_q_sigs = []
@@ -291,7 +364,6 @@ for run_n in run_n_dict.values():
     ll_dist_c_sigs.append(sample_sig['classic_loss'].reshape(params.kfold_n,-1))
     ll_dist_q_sigs.append(sample_sig['quantum_loss'].reshape(params.kfold_n,-1))
 
-legend_title = 'Train size'
 legend_labels=list(run_n_dict.keys())
 plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, legend_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
 
