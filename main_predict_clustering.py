@@ -44,7 +44,7 @@ logger = log.get_logger(__name__)
 #****************************************#
 
 # command line
-parser = argparse.ArgumentParser(description='read arguments for qkmedians training')
+parser = argparse.ArgumentParser(description='read arguments for qkmeans prediction')
 parser.add_argument('-r', dest='run_n', type=int, help='experiment run number')
 parser.add_argument('-z', dest='lat_dim', type=int, help='latent dimensionality')
 parser.add_argument('-n', dest='read_n', type=int, help='training data size', default=int(5e4))

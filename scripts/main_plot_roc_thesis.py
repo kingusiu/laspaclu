@@ -61,7 +61,7 @@ params = Parameters(sample_id_qcd='qcdSigExt',
 #               READ DATA
 
 
-run_n = 44
+run_n = 47
 
 # path setup
 fig_dir = os.path.join(stco.reporting_fig_base_dir,'roc','allSig','r'+str(run_n))
@@ -92,7 +92,7 @@ roc.plot_roc(ll_scores_qcd_c, ll_scores_sig_c, ll_scores_qcd_q, ll_scores_sig_q,
 #****************************************#
 #               HYBRID
 
-run_n_h = 74
+run_n_h = 77
 
 input_data_dir_h = stco.cluster_out_data_dir+'/run_'+str(run_n_h)
 
@@ -118,6 +118,11 @@ roc.plot_roc_multiline(ll_scores_qcd, ll_scores_sig, legend_labels, legend_title
 #**********************************************************#
 
 run_n_dict_configs = {
+    4: OrderedDict([
+        (10,40),
+        (600,44),
+        (6000,48),
+        ]),
     8: OrderedDict([
         (10,41),
         (600,45),
@@ -131,6 +136,11 @@ run_n_dict_configs = {
 }
 
 run_n_dict_configs_hybrid = {
+    4: OrderedDict([
+        (10,70),
+        (600,74),
+        (6000,78),
+        ]),
     8: OrderedDict([
         (10,71),
         (600,75),
@@ -145,7 +155,8 @@ run_n_dict_configs_hybrid = {
 
 dim_z = 16
 
-run_n_dict = run_n_dict_configs[dim_z]
+# run_n_dict = run_n_dict_configs[dim_z]
+run_n_dict = run_n_dict_configs_hybrid[dim_z]
 
 
 # path setup
@@ -202,7 +213,7 @@ run_n_dict_configs = {
         (4,40),
         (8,41),
         (16,42),
-        (32,43)
+        #(32,43)
         ]),
     600: OrderedDict([
         (4,44),
@@ -217,8 +228,29 @@ run_n_dict_configs = {
         ]),
 }
 
-train_n = 10
-run_n_dict = run_n_dict_configs[train_n]
+run_n_dict_configs_hybrid = {
+    10: OrderedDict([
+        (4,70),
+        (8,71),
+        (16,72),
+        #(32,73)
+        ]),
+    600: OrderedDict([
+        (4,74),
+        (8,75),
+        (16,76),
+        (32,77)
+        ]),
+    6000: OrderedDict([
+        (4,78),
+        (8,79),
+        (16,80),
+        ]),
+}
+
+train_n = 6000
+# run_n_dict = run_n_dict_configs[train_n]
+run_n_dict = run_n_dict_configs_hybrid[train_n]
 
 
 # path setup

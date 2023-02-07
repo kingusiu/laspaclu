@@ -140,7 +140,7 @@ def plot_roc_multiline(ll_sc_bg, ll_sc_sig, main_legend_labels, main_legend_titl
     legend2 = plt.legend([lines[i*len(line_styles)] for i in range(len(main_legend_labels))], main_legend_labels, loc='lower left', frameon=False, title=main_legend_title, fontsize=14, title_fontsize=17)
     
     auc_legend_labels = [r"$    {:.3f} \,\,|\,\, {:.3f} |\,\, {:.3f}$".format(aucs[i*line_type_n],aucs[i*line_type_n+1],aucs[i*line_type_n+2]) for i in range(len(main_legend_labels))]
-    auc_legend_title = r"auc q $\vert$ \,\, h \,\, $\vert$ c"
+    auc_legend_title = r"auc q \, $\vert$ \,\,h\,\, $\vert$ \, c"
     legend3 = plt.legend([lines[i*len(line_styles)] for i in range(len(main_legend_labels))], auc_legend_labels, loc='lower center', frameon=False, title=auc_legend_title, fontsize=14, title_fontsize=17) 
     
     legend1._legend_box.align = "left"

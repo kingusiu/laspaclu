@@ -85,7 +85,7 @@ def compute_fpr_mean_and_std_for_fixpoint_tpr(quantum_loss_qcd, quantum_loss_sig
 
 def plot_ROC_kfold_mean(quantum_loss_qcd, quantum_loss_sig, classic_loss_qcd, classic_loss_sig, ids, n_folds, 
                        pic_id=None, xlabel='TPR', ylabel=r'FPR$^{-1}$', legend_loc='center right', legend_title='$ROC$', save_dir=None,
-                       palette=['#3E96A1', '#EC4E20', '#FF9505', '#6C56B3']):
+                       palette=['#3E96A1', '#EC4E20', '#FF9505', '#6C56B3'], tpr_fixpoint=0.8):
 
     lines_n = len(quantum_loss_qcd)
     palette = palette[:lines_n]
@@ -200,7 +200,7 @@ params = Parameters(sample_id_qcd='qcdSigExt',
                     sample_id_sigs=['GtoWW35na', 'AtoHZ35', 'GtoWW15br'], 
                     kfold_n=10,
                     read_n=int(5e4),
-                    do_plots=False,
+                    do_plots=True,
                     do_fpr_table=True
                     )
 
@@ -217,9 +217,9 @@ logger.info('\n'+'*'*70+'\n'+'\t\t\t PLOTING RUN \n'+str(params)+'\n'+'*'*70)
 #****************************************#
 #               READ DATA
 
-run_n = 45
-dim_z = 8
-train_n = 600
+run_n = 42
+dim_z = 16
+train_n = 10
 study_title = 'Anomaly signature'
 study_labels = ['Narrow 'r'G $\to$ WW 3.5 TeV', r'A $\to$ HZ $\to$ ZZZ 3.5 TeV', 'Broad 'r'G $\to$ WW 1.5 TeV']
 
@@ -372,7 +372,7 @@ for run_n in run_n_dict.values():
 
 if params.do_plots:
 
-    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allTrainN_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=study_title)
 
 if params.do_fpr_table:
     logger.info(f'printing fpr table for {study_title} of {sample_id_sig}')
@@ -398,7 +398,7 @@ for run_n in run_n_dict.values():
 
 if params.do_plots:
 
-    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=legend_title)
+    plot_ROC_kfold_mean(ll_dist_q_qcd, ll_dist_q_sigs, ll_dist_c_qcd, ll_dist_c_sigs, study_labels, params.kfold_n, save_dir=fig_dir, pic_id='roc_qmeans_allLatDims_sig'+sample_id_sig+'_z'+str(dim_z), legend_title=study_title)
 
 if params.do_fpr_table:
     logger.info(f'printing fpr table for {study_title} of {sample_id_sig}')
