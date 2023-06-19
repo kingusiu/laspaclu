@@ -43,10 +43,11 @@ reporting_gif_base_dir = 'results/gif'
 
 sample_name_dict = OrderedDict(
 
-    qcdSigExt = 'QCD signal-region',
-    GtoWW35na = r'$G(3.5 TeV)\to WW$ narrow',
-    GtoWW15br = r'$G(1.5 TeV)\to WW$ broad',
-    AtoHZ35 = r'$A(3.5 TeV) \to HZ \to ZZZ$'
+    qcdSig = 'QCD signal region',
+    qcdSigExt = 'QCD signal region',
+    GtoWW35na = r'narrow $G(3.5 \, TeV)\to WW$',
+    GtoWW15br = r'broad $G(1.5 \, TeV)\to WW$',
+    AtoHZ35 = r'$A(3.5 \, TeV) \to HZ \to ZZZ$'
 )
 
 # colors BG vs SIG
